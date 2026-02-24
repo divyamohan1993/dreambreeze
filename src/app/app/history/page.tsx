@@ -1,0 +1,638 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Clock,
+  TrendingUp,
+  Star,
+  User,
+  ChevronDown,
+  ChevronUp,
+  Moon,
+  Brain,
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
+type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
+
+interface SleepSession {
+  id: string;
+  date: string;
+  dateShort: string;
+  dayLabel: string;
+  sleepScore: number;
+  duration: number; // minutes
+  bedtime: string;
+  wakeTime: string;
+  dominantPosture: Posture;
+  timeline: { time: string; stage: number }[];
+  postureDistribution: { name: string; value: number; color: string }[];
+  fanSpeedOverTime: { time: string; speed: number }[];
+  insights: string[];
+}
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+
+const POSTURE_LABELS: Record<Posture, string> = {
+  supine: 'Back',
+  prone: 'Stomach',
+  'left-lateral': 'Left Side',
+  'right-lateral': 'Right Side',
+  fetal: 'Fetal',
+};
+
+const STAGE_COLORS: Record<string, string> = {
+  Awake: '#f0a060',
+  REM: '#6e5ea8',
+  Light: '#4ecdc4',
+  Deep: '#1a6b66',
+};
+
+// ── Score color helper ─────────────────────────────────────────────────────────
+
+function scoreColor(score: number): string {
+  if (score >= 85) return '#4ecdc4';
+  if (score >= 70) return '#f0a060';
+  if (score >= 50) return '#e6c619';
+  return '#e94560';
+}
+
+function scoreBg(score: number): string {
+  if (score >= 85) return 'rgba(78, 205, 196, 0.15)';
+  if (score >= 70) return 'rgba(240, 160, 96, 0.15)';
+  if (score >= 50) return 'rgba(230, 198, 25, 0.15)';
+  return 'rgba(233, 69, 96, 0.15)';
+}
+
+// ── Generate mock sessions ─────────────────────────────────────────────────────
+
+function generateMockSessions(): SleepSession[] {
+  const sessions: SleepSession[] = [];
+  const postures: Posture[] = ['supine', 'prone', 'left-lateral', 'right-lateral', 'fetal'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+
+    const score = Math.floor(60 + Math.random() * 38);
+    const duration = Math.floor(360 + Math.random() * 150); // 6-8.5 hrs
+    const bedHour = 22 + Math.floor(Math.random() * 2);
+    const bedMin = Math.floor(Math.random() * 60);
+    const wakeHour = 6 + Math.floor(Math.random() * 2);
+    const wakeMin = Math.floor(Math.random() * 60);
+    const dominantPosture = postures[Math.floor(Math.random() * postures.length)];
+
+    // Timeline
+    const stageSequence: SleepStage[] = [];
+    const numPoints = 24;
+    const stageOptions: SleepStage[] = ['awake', 'light', 'deep', 'rem'];
+    const stageValues: Record<SleepStage, number> = { awake: 3, rem: 2, light: 1, deep: 0 };
+
+    // Realistic sleep progression
+    const pattern: SleepStage[] = [
+      'awake', 'light', 'light', 'deep', 'deep', 'deep',
+      'light', 'rem', 'rem', 'light', 'deep', 'deep',
+      'light', 'rem', 'rem', 'light', 'light', 'deep',
+      'light', 'rem', 'light', 'light', 'awake', 'awake',
+    ];
+
+    const timeline = pattern.map((stage, j) => {
+      const t = new Date(date);
+      t.setHours(bedHour, bedMin + j * Math.floor(duration / numPoints), 0);
+      return {
+        time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        stage: stageValues[stage],
+      };
+    });
+
+    // Posture distribution
+    const postureDistribution = [
+      { name: 'Back', value: 20 + Math.floor(Math.random() * 30), color: '#4ecdc4' },
+      { name: 'Side L', value: 10 + Math.floor(Math.random() * 25), color: '#6e5ea8' },
+      { name: 'Side R', value: 10 + Math.floor(Math.random() * 25), color: '#e94560' },
+      { name: 'Fetal', value: 5 + Math.floor(Math.random() * 20), color: '#f0a060' },
+      { name: 'Stomach', value: 3 + Math.floor(Math.random() * 10), color: '#e6c619' },
+    ];
+
+    // Fan speed over time
+    const fanSpeedOverTime = Array.from({ length: 12 }, (_, j) => ({
+      time: `${j * 0.5 + 0.5}h`,
+      speed: Math.floor(20 + Math.random() * 60),
+    }));
+
+    sessions.push({
+      id: `session-${i}`,
+      date: date.toISOString().split('T')[0],
+      dateShort: dateStr,
+      dayLabel: dayNames[date.getDay()],
+      sleepScore: score,
+      duration,
+      bedtime: `${bedHour.toString().padStart(2, '0')}:${bedMin.toString().padStart(2, '0')}`,
+      wakeTime: `${wakeHour.toString().padStart(2, '0')}:${wakeMin.toString().padStart(2, '0')}`,
+      dominantPosture,
+      timeline,
+      postureDistribution,
+      fanSpeedOverTime,
+      insights:
+        i <= 2
+          ? []
+          : [
+              'Deep sleep was 15% longer than your average.',
+              'You changed positions 4 times, which is normal.',
+              'Fan adjusted automatically 8 times during the night.',
+            ],
+    });
+  }
+
+  return sessions;
+}
+
+// ── Mini Timeline Bar ──────────────────────────────────────────────────────────
+
+function MiniTimelineBar({ timeline }: { timeline: { time: string; stage: number }[] }) {
+  const stageColors = ['#1a6b66', '#4ecdc4', '#6e5ea8', '#f0a060'];
+  return (
+    <div className="flex h-2 rounded-full overflow-hidden gap-px">
+      {timeline.map((point, i) => (
+        <div
+          key={i}
+          className="flex-1 transition-colors"
+          style={{ backgroundColor: stageColors[point.stage] }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Custom Recharts Tooltip ────────────────────────────────────────────────────
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.[0]) return null;
+  const stageVal = payload[0].value;
+  const stages = ['Deep', 'Light', 'REM', 'Awake'];
+  return (
+    <div className="glass px-3 py-2 text-xs">
+      <p className="text-db-text-dim">{label}</p>
+      <p className="font-semibold" style={{ color: STAGE_COLORS[stages[stageVal]] }}>
+        {stages[stageVal]}
+      </p>
+    </div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
+
+export default function HistoryPage() {
+  const sessions = useMemo(() => generateMockSessions(), []);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Summary calculations
+  const avgScore = Math.round(sessions.reduce((a, s) => a + s.sleepScore, 0) / sessions.length);
+  const totalSleep = sessions.reduce((a, s) => a + s.duration, 0);
+  const totalSleepHours = Math.floor(totalSleep / 60);
+  const totalSleepMins = totalSleep % 60;
+  const bestNight = sessions.reduce((best, s) => (s.sleepScore > best.sleepScore ? s : best));
+  const postureCounts: Record<string, number> = {};
+  sessions.forEach((s) => {
+    postureCounts[s.dominantPosture] = (postureCounts[s.dominantPosture] || 0) + 1;
+  });
+  const mostCommonPosture = Object.entries(postureCounts).sort(
+    (a, b) => b[1] - a[1]
+  )[0][0] as Posture;
+
+  // Trend data (7-day scores)
+  const trendData = sessions.map((s) => ({
+    day: s.dayLabel,
+    score: s.sleepScore,
+  }));
+
+  const firstScore = sessions[0]?.sleepScore || 0;
+  const lastScore = sessions[sessions.length - 1]?.sleepScore || 0;
+  const improvement = lastScore - firstScore;
+
+  const formatDuration = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}h ${m}m`;
+  };
+
+  return (
+    <div className="px-4 pt-6 pb-4 max-w-lg mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-bold text-db-text">Sleep History</h1>
+        <p className="text-xs text-db-text-dim mt-0.5">Last 7 nights</p>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Summary Cards (horizontal scroll)
+          ══════════════════════════════════════════════════════════════════════ */}
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+        {/* Avg Score */}
+        <div className="glass skeu-raised rounded-2xl p-4 min-w-[140px] flex-shrink-0">
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingUp size={12} className="text-db-text-muted" />
+            <span className="text-[10px] text-db-text-muted uppercase tracking-wider">
+              Avg Score
+            </span>
+          </div>
+          <p className="text-3xl font-bold" style={{ color: scoreColor(avgScore) }}>
+            {avgScore}
+          </p>
+          <p className="text-[10px] text-db-text-dim">this week</p>
+        </div>
+
+        {/* Total Sleep */}
+        <div className="glass skeu-raised rounded-2xl p-4 min-w-[140px] flex-shrink-0">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Clock size={12} className="text-db-text-muted" />
+            <span className="text-[10px] text-db-text-muted uppercase tracking-wider">
+              Total Sleep
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-db-teal">
+            {totalSleepHours}
+            <span className="text-sm font-normal text-db-text-dim">h </span>
+            {totalSleepMins}
+            <span className="text-sm font-normal text-db-text-dim">m</span>
+          </p>
+          <p className="text-[10px] text-db-text-dim">this week</p>
+        </div>
+
+        {/* Best Night */}
+        <div className="glass skeu-raised rounded-2xl p-4 min-w-[140px] flex-shrink-0">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Star size={12} className="text-db-text-muted" />
+            <span className="text-[10px] text-db-text-muted uppercase tracking-wider">
+              Best Night
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-db-amber">{bestNight.sleepScore}</p>
+          <p className="text-[10px] text-db-text-dim">{bestNight.dateShort}</p>
+        </div>
+
+        {/* Most Common Posture */}
+        <div className="glass skeu-raised rounded-2xl p-4 min-w-[140px] flex-shrink-0">
+          <div className="flex items-center gap-1.5 mb-2">
+            <User size={12} className="text-db-text-muted" />
+            <span className="text-[10px] text-db-text-muted uppercase tracking-wider">
+              Top Posture
+            </span>
+          </div>
+          <p className="text-lg font-bold text-db-lavender">
+            {POSTURE_LABELS[mostCommonPosture]}
+          </p>
+          <p className="text-[10px] text-db-text-dim">most common</p>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Session List
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-db-text-dim flex items-center gap-2">
+          <Moon size={14} />
+          Nightly Sessions
+        </h2>
+
+        {sessions.map((session) => {
+          const isExpanded = expandedId === session.id;
+          return (
+            <motion.div
+              key={session.id}
+              className="glass skeu-raised rounded-2xl overflow-hidden"
+              layout
+            >
+              {/* Session summary row */}
+              <button
+                onClick={() => setExpandedId(isExpanded ? null : session.id)}
+                className="w-full p-4 flex items-center gap-3 text-left"
+              >
+                {/* Date */}
+                <div className="w-12 text-center flex-shrink-0">
+                  <p className="text-xs text-db-text-muted">{session.dayLabel}</p>
+                  <p className="text-sm font-bold text-db-text">{session.dateShort.split(' ')[1]}</p>
+                </div>
+
+                {/* Score badge */}
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{
+                    backgroundColor: scoreBg(session.sleepScore),
+                    color: scoreColor(session.sleepScore),
+                    border: `1px solid ${scoreColor(session.sleepScore)}30`,
+                  }}
+                >
+                  {session.sleepScore}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-xs text-db-text-dim mb-1.5">
+                    <span>{formatDuration(session.duration)}</span>
+                    <span className="text-db-text-muted">|</span>
+                    <span>{session.bedtime} - {session.wakeTime}</span>
+                  </div>
+                  <MiniTimelineBar timeline={session.timeline} />
+                </div>
+
+                {/* Posture + Chevron */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[10px] text-db-text-muted">
+                    {POSTURE_LABELS[session.dominantPosture]}
+                  </span>
+                  {isExpanded ? (
+                    <ChevronUp size={16} className="text-db-text-muted" />
+                  ) : (
+                    <ChevronDown size={16} className="text-db-text-muted" />
+                  )}
+                </div>
+              </button>
+
+              {/* Expanded detail */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 space-y-4 border-t border-white/[0.04] pt-4">
+                      {/* Full sleep timeline chart */}
+                      <div>
+                        <h3 className="text-[11px] text-db-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <Brain size={12} />
+                          Sleep Stages
+                        </h3>
+                        <div className="h-32">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={session.timeline}
+                              margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
+                            >
+                              <defs>
+                                <linearGradient id={`grad-${session.id}`} x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#6e5ea8" stopOpacity={0.4} />
+                                  <stop offset="100%" stopColor="#0a0e27" stopOpacity={0.1} />
+                                </linearGradient>
+                              </defs>
+                              <XAxis
+                                dataKey="time"
+                                tick={{ fill: '#555577', fontSize: 9 }}
+                                axisLine={false}
+                                tickLine={false}
+                                interval="preserveStartEnd"
+                              />
+                              <YAxis
+                                domain={[0, 3]}
+                                ticks={[0, 1, 2, 3]}
+                                tickFormatter={(v: number) =>
+                                  ['Deep', 'Light', 'REM', 'Awake'][v] || ''
+                                }
+                                tick={{ fill: '#555577', fontSize: 9 }}
+                                axisLine={false}
+                                tickLine={false}
+                                width={40}
+                              />
+                              <Tooltip content={<ChartTooltip />} />
+                              <Area
+                                type="stepAfter"
+                                dataKey="stage"
+                                stroke="#6e5ea8"
+                                strokeWidth={2}
+                                fill={`url(#grad-${session.id})`}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Posture distribution + Fan speed side by side */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Posture pie */}
+                        <div>
+                          <h3 className="text-[11px] text-db-text-muted uppercase tracking-wider mb-2">
+                            Postures
+                          </h3>
+                          <div className="h-28">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={session.postureDistribution}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={25}
+                                  outerRadius={45}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                  stroke="none"
+                                >
+                                  {session.postureDistribution.map((entry, idx) => (
+                                    <Cell key={idx} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  formatter={(value?: number, name?: string) => [
+                                    `${value ?? 0}%`,
+                                    name ?? '',
+                                  ]}
+                                  contentStyle={{
+                                    background: '#151a35',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: 8,
+                                    fontSize: 11,
+                                  }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                            {session.postureDistribution.map((p) => (
+                              <span
+                                key={p.name}
+                                className="text-[9px] text-db-text-dim flex items-center gap-0.5"
+                              >
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full inline-block"
+                                  style={{ backgroundColor: p.color }}
+                                />
+                                {p.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Fan speed line */}
+                        <div>
+                          <h3 className="text-[11px] text-db-text-muted uppercase tracking-wider mb-2">
+                            Fan Speed
+                          </h3>
+                          <div className="h-28">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart
+                                data={session.fanSpeedOverTime}
+                                margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
+                              >
+                                <XAxis
+                                  dataKey="time"
+                                  tick={{ fill: '#555577', fontSize: 8 }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                />
+                                <YAxis
+                                  domain={[0, 100]}
+                                  tick={{ fill: '#555577', fontSize: 8 }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                  width={28}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="speed"
+                                  stroke="#4ecdc4"
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AI Insights */}
+                      <div>
+                        <h3 className="text-[11px] text-db-text-muted uppercase tracking-wider mb-2">
+                          AI Insights
+                        </h3>
+                        {session.insights.length > 0 ? (
+                          <ul className="space-y-1.5">
+                            {session.insights.map((insight, idx) => (
+                              <li
+                                key={idx}
+                                className="text-xs text-db-text-dim flex items-start gap-2"
+                              >
+                                <span className="w-1 h-1 rounded-full bg-db-teal mt-1.5 flex-shrink-0" />
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-xs text-db-text-muted italic">
+                            Track 3+ nights for AI insights
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Trends
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section className="glass skeu-raised rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-db-text-dim flex items-center gap-2">
+            <TrendingUp size={14} />
+            7-Day Trend
+          </h2>
+          {improvement > 0 && (
+            <span className="text-[10px] font-medium text-db-teal bg-db-teal/10 px-2 py-0.5 rounded-full">
+              +{improvement}% this week
+            </span>
+          )}
+        </div>
+
+        <div className="h-36">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trendData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4ecdc4" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#4ecdc4" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="day"
+                tick={{ fill: '#555577', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[50, 100]}
+                tick={{ fill: '#555577', fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                width={32}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: '#151a35',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(value?: number) => [`${value ?? 0}`, 'Score']}
+              />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#4ecdc4"
+                strokeWidth={2.5}
+                dot={{ fill: '#4ecdc4', r: 3, strokeWidth: 0 }}
+                activeDot={{ fill: '#4ecdc4', r: 5, strokeWidth: 2, stroke: '#0a0e27' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {improvement > 0 ? (
+          <p className="text-xs text-db-text-dim mt-2 text-center">
+            Your sleep quality improved by{' '}
+            <span className="text-db-teal font-medium">{improvement}%</span> this week. Keep
+            it up!
+          </p>
+        ) : (
+          <p className="text-xs text-db-text-dim mt-2 text-center">
+            Your sleep has been consistent. Fine-tune your settings for improvement.
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}

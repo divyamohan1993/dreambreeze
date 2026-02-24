@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --db-navy: #0a0e27;
+  --db-surface: #151a35;
+  --db-surface-hover: #1d2347;
+  --db-glass: rgba(255, 255, 255, 0.06);
+  --db-glass-border: rgba(255, 255, 255, 0.08);
+  --db-teal: #4ecdc4;
+  --db-teal-glow: rgba(78, 205, 196, 0.4);
+  --db-lavender: #6e5ea8;
+  --db-lavender-glow: rgba(110, 94, 168, 0.4);
+  --db-rose: #e94560;
+  --db-rose-glow: rgba(233, 69, 96, 0.4);
+  --db-amber: #f0a060;
+  --db-amber-glow: rgba(240, 160, 96, 0.4);
+  --db-text: #e0e0ee;
+  --db-text-dim: #8888aa;
+  --db-text-muted: #555577;
+  --db-green: #00cc00;
+  --db-yellow: #e6c619;
+  --db-orange: #e68a19;
+  --db-red: #e63919;
+  --db-purple: #a855f7;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-db-navy: var(--db-navy);
+  --color-db-surface: var(--db-surface);
+  --color-db-surface-hover: var(--db-surface-hover);
+  --color-db-teal: var(--db-teal);
+  --color-db-lavender: var(--db-lavender);
+  --color-db-rose: var(--db-rose);
+  --color-db-amber: var(--db-amber);
+  --color-db-text: var(--db-text);
+  --color-db-text-dim: var(--db-text-dim);
+  --color-db-text-muted: var(--db-text-muted);
+  --color-db-green: var(--db-green);
+  --color-db-yellow: var(--db-yellow);
+  --color-db-orange: var(--db-orange);
+  --color-db-red: var(--db-red);
+  --color-db-purple: var(--db-purple);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--db-navy);
+  color: var(--db-text);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  overflow-x: hidden;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Glassmorphic panel base */
+.glass {
+  background: var(--db-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--db-glass-border);
+  border-radius: 16px;
+}
+
+/* Skeuomorphic pressed/raised states */
+.skeu-raised {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 12px 32px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.skeu-pressed {
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.05);
+}
+
+/* LED glow animation */
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Breathing animation for indicators */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+/* Smooth page transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Fabric texture overlay */
+.texture-fabric {
+  background-image:
+    linear-gradient(0deg, transparent 24%,
+      rgba(255,255,255,.015) 25%, rgba(255,255,255,.015) 26%,
+      transparent 27%, transparent 74%,
+      rgba(255,255,255,.015) 75%, rgba(255,255,255,.015) 76%,
+      transparent 77%),
+    linear-gradient(90deg, transparent 24%,
+      rgba(255,255,255,.015) 25%, rgba(255,255,255,.015) 26%,
+      transparent 27%, transparent 74%,
+      rgba(255,255,255,.015) 75%, rgba(255,255,255,.015) 76%,
+      transparent 77%);
+  background-size: 8px 8px;
+}
+
+/* Brushed metal texture */
+.texture-metal {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(255,255,255,0.02) 1px,
+      rgba(255,255,255,0.02) 2px
+    );
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--db-navy);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--db-surface);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--db-surface-hover);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,0 +1,1 @@
+build a ai powered fan that adjusts speed based on sleep posture. and sleep rem. use phone sensors to detect rems, sleep patterns, the white noise fan creates - use that in our advantage. 

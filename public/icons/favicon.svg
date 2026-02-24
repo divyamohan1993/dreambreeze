@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#151a35"/>
+      <stop offset="100%" style="stop-color:#0a0e27"/>
+    </linearGradient>
+    <linearGradient id="blade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ecdc4"/>
+      <stop offset="100%" style="stop-color:#6e5ea8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <g transform="translate(32,32)">
+    <circle r="4" fill="#4ecdc4" opacity="0.9"/>
+    <g fill="url(#blade)" opacity="0.85">
+      <ellipse cx="0" cy="-12" rx="4" ry="11" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-12" rx="4" ry="11" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-12" rx="4" ry="11" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-12" rx="4" ry="11" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-12" rx="4" ry="11" transform="rotate(288)"/>
+    </g>
+  </g>
+  <text x="32" y="58" text-anchor="middle" font-size="7" font-weight="bold" fill="#e0e0ee" font-family="system-ui">DB</text>
+</svg>
