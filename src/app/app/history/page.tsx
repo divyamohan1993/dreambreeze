@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Moon,
   Brain,
+  Activity,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -25,6 +26,11 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import SleepDebtCard from '@/components/ui/SleepDebtCard';
+import CognitiveReadinessCard from '@/components/ui/CognitiveReadinessCard';
+import EnergyForecast from '@/components/charts/EnergyForecast';
+import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
+import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -239,6 +245,40 @@ export default function HistoryPage() {
   const lastScore = sessions[sessions.length - 1]?.sleepScore || 0;
   const improvement = lastScore - firstScore;
 
+  // ── Cognitive Readiness (last night) ────────────────────────────────────────
+  const cognitiveReadiness = useMemo(() => {
+    const lastSession = sessions[sessions.length - 1];
+    const hoursSlept = lastSession ? lastSession.duration / 60 : 7;
+    return calculateCognitiveReadiness({
+      hoursSlept,
+      deepSleepPercent: 18,
+      remSleepPercent: 22,
+      awakenings: 2,
+      sleepDebtHours: 4.5,
+      sleepOnsetMinutes: 12,
+      preSleepCaffeineMg: 80,
+      preSleepAlcohol: 0,
+      preSleepExercise: 'light',
+      consistency: 72,
+    });
+  }, [sessions]);
+
+  // ── Energy Forecast (today) ─────────────────────────────────────────────────
+  const energyForecastData = useMemo(() => {
+    const lastSession = sessions[sessions.length - 1];
+    const hoursSlept = lastSession ? lastSession.duration / 60 : 7;
+    return generateEnergyForecast(hoursSlept, 4.5);
+  }, [sessions]);
+
+  // ── 7-Night Cognitive Readiness Trend (demo data) ───────────────────────────
+  const cognitiveScoreTrend = useMemo(() => {
+    const demoScores = [58, 62, 55, 71, 68, 74, cognitiveReadiness.score];
+    return sessions.map((s, i) => ({
+      day: s.dayLabel,
+      score: demoScores[i] ?? cognitiveReadiness.score,
+    }));
+  }, [sessions, cognitiveReadiness.score]);
+
   const formatDuration = (mins: number) => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
@@ -314,6 +354,127 @@ export default function HistoryPage() {
           <p className="text-[10px] text-db-text-dim">most common</p>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Row 1: Sleep Debt | Cognitive Readiness (side by side)
+          ══════════════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <SleepDebtCard
+          totalDebtHours={4.5}
+          weeklyDebtHours={2.5}
+          trend="improving"
+          recoveryNightsNeeded={2}
+          impairmentLevel="mild"
+          impairmentEquivalent="Similar to 0.03% BAC — mildly reduced reaction time and working memory."
+          recommendations={[
+            'Go to bed 30 minutes earlier for the next 3 nights.',
+            'Avoid screens 1 hour before bedtime to improve onset latency.',
+            'Keep your wake time consistent, even on weekends.',
+          ]}
+        />
+        <CognitiveReadinessCard
+          score={cognitiveReadiness.score}
+          grade={cognitiveReadiness.grade}
+          label={cognitiveReadiness.label}
+          breakdown={cognitiveReadiness.breakdown}
+          peakHours={cognitiveReadiness.peakHours}
+          advice={cognitiveReadiness.advice}
+        />
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Row 2: Energy Forecast (full width)
+          ══════════════════════════════════════════════════════════════════════ */}
+      <EnergyForecast
+        data={energyForecastData}
+        peakStart={cognitiveReadiness.peakHours.start}
+        peakEnd={cognitiveReadiness.peakHours.end}
+      />
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Row 3: 7-Night Cognitive Readiness Trend
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section className="glass skeu-raised rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-db-text-dim flex items-center gap-2">
+            <Activity size={14} />
+            Cognitive Readiness Trend
+          </h2>
+          {cognitiveScoreTrend.length >= 2 &&
+            cognitiveScoreTrend[cognitiveScoreTrend.length - 1].score >
+              cognitiveScoreTrend[0].score && (
+              <span className="text-[10px] font-medium text-db-teal bg-db-teal/10 px-2 py-0.5 rounded-full">
+                +
+                {cognitiveScoreTrend[cognitiveScoreTrend.length - 1].score -
+                  cognitiveScoreTrend[0].score}{' '}
+                pts this week
+              </span>
+            )}
+        </div>
+
+        <div className="h-36">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={cognitiveScoreTrend}
+              margin={{ top: 8, right: 8, bottom: 0, left: -20 }}
+            >
+              <defs>
+                <linearGradient id="cogTrendGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6e5ea8" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#6e5ea8" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="day"
+                tick={{ fill: '#555577', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[30, 100]}
+                tick={{ fill: '#555577', fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                width={32}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: '#151a35',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(value?: number) => [`${value ?? 0}`, 'Readiness']}
+              />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#6e5ea8"
+                strokeWidth={2.5}
+                dot={{ fill: '#6e5ea8', r: 3, strokeWidth: 0 }}
+                activeDot={{ fill: '#6e5ea8', r: 5, strokeWidth: 2, stroke: '#0a0e27' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <p className="text-xs text-db-text-dim mt-2 text-center">
+          Your cognitive readiness has been{' '}
+          {cognitiveScoreTrend[cognitiveScoreTrend.length - 1].score >=
+          cognitiveScoreTrend[0].score ? (
+            <>
+              trending{' '}
+              <span className="text-db-lavender font-medium">upward</span> this
+              week.
+            </>
+          ) : (
+            <>
+              <span className="text-db-amber font-medium">declining</span> — consider
+              prioritizing sleep consistency.
+            </>
+          )}
+        </p>
+      </section>
 
       {/* ══════════════════════════════════════════════════════════════════════
           Session List

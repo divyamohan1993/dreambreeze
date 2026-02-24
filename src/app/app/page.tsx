@@ -8,6 +8,11 @@ import {
   Volume2,
   User,
   Zap,
+  Bot,
+  Sparkles,
+  ThermometerSun,
+  BatteryCharging,
+  Moon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -20,6 +25,15 @@ import {
 } from 'recharts';
 import FanVisualization from '@/components/fan/FanVisualization';
 import SpeedKnob from '@/components/fan/SpeedKnob';
+import WeatherCard from '@/components/ui/WeatherCard';
+import CognitiveReadinessCard from '@/components/ui/CognitiveReadinessCard';
+import SleepDebtCard from '@/components/ui/SleepDebtCard';
+import EnergyForecast from '@/components/charts/EnergyForecast';
+import TemperatureProfileSelector from '@/components/ui/TemperatureProfileSelector';
+import { useWeather } from '@/hooks/use-weather';
+import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
+import { calculateSleepDebt } from '@/lib/ai/sleep-debt';
+import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -216,6 +230,74 @@ export default function DashboardPage() {
     adaptive: true,
   });
   const [timeline] = useState<TimelinePoint[]>(() => generateTimeline());
+
+  // ── Weather hook ────────────────────────────────────────────────────────
+  const { weather, loading: weatherLoading, error: weatherError, recommendation: weatherRecommendation, refresh: weatherRefresh } = useWeather();
+
+  // ── Temperature profile state ──────────────────────────────────────────
+  const [selectedProfileId, setSelectedProfileId] = useState('optimal');
+
+  // ── Agent status animation ─────────────────────────────────────────────
+  const [latestInsight, setLatestInsight] = useState('Monitoring sleep patterns...');
+  useEffect(() => {
+    const insights = [
+      'Monitoring sleep patterns...',
+      'Circadian rhythm aligned',
+      'Deep sleep phase optimized',
+      'Temperature adjusted for REM',
+      'Posture change detected',
+      'Sound profile adapted',
+    ];
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % insights.length;
+      setLatestInsight(insights[idx]);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ── Cognitive readiness (demo data) ────────────────────────────────────
+  const cognitiveReadiness = useMemo(
+    () =>
+      calculateCognitiveReadiness({
+        hoursSlept: 7.5,
+        deepSleepPercent: 18,
+        remSleepPercent: 22,
+        awakenings: 2,
+        sleepDebtHours: 3.5,
+        sleepOnsetMinutes: 12,
+        preSleepCaffeineMg: 80,
+        preSleepAlcohol: 0,
+        preSleepExercise: 'light',
+        consistency: 72,
+      }),
+    [],
+  );
+
+  // ── Sleep debt (demo data) ─────────────────────────────────────────────
+  const sleepDebt = useMemo(
+    () =>
+      calculateSleepDebt([
+        { date: '2026-02-24', hoursSlept: 7.5, sleepQuality: 78, deepSleepPercent: 18, remSleepPercent: 22 },
+        { date: '2026-02-23', hoursSlept: 6.5, sleepQuality: 65, deepSleepPercent: 15, remSleepPercent: 20 },
+        { date: '2026-02-22', hoursSlept: 7.0, sleepQuality: 72, deepSleepPercent: 17, remSleepPercent: 21 },
+        { date: '2026-02-21', hoursSlept: 6.0, sleepQuality: 60, deepSleepPercent: 14, remSleepPercent: 18 },
+        { date: '2026-02-20', hoursSlept: 7.8, sleepQuality: 82, deepSleepPercent: 20, remSleepPercent: 24 },
+        { date: '2026-02-19', hoursSlept: 6.2, sleepQuality: 58, deepSleepPercent: 13, remSleepPercent: 19 },
+        { date: '2026-02-18', hoursSlept: 7.0, sleepQuality: 70, deepSleepPercent: 16, remSleepPercent: 20 },
+        { date: '2026-02-17', hoursSlept: 7.5, sleepQuality: 75, deepSleepPercent: 18, remSleepPercent: 22 },
+        { date: '2026-02-16', hoursSlept: 6.8, sleepQuality: 68, deepSleepPercent: 15, remSleepPercent: 21 },
+        { date: '2026-02-15', hoursSlept: 7.2, sleepQuality: 74, deepSleepPercent: 17, remSleepPercent: 23 },
+        { date: '2026-02-14', hoursSlept: 5.5, sleepQuality: 50, deepSleepPercent: 12, remSleepPercent: 16 },
+        { date: '2026-02-13', hoursSlept: 7.0, sleepQuality: 71, deepSleepPercent: 16, remSleepPercent: 20 },
+        { date: '2026-02-12', hoursSlept: 6.5, sleepQuality: 64, deepSleepPercent: 14, remSleepPercent: 19 },
+        { date: '2026-02-11', hoursSlept: 7.3, sleepQuality: 76, deepSleepPercent: 18, remSleepPercent: 22 },
+      ]),
+    [],
+  );
+
+  // ── Energy forecast (demo: 7.5h slept, 3.5h debt) ─────────────────────
+  const energyForecastData = useMemo(() => generateEnergyForecast(7.5, 3.5), []);
 
   // ── Simulated live updates every 3 seconds ───────────────────────────────
   useEffect(() => {
@@ -476,6 +558,139 @@ export default function DashboardPage() {
               <span className="text-[10px] text-db-text-dim">{label}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          AI AGENTS STATUS BADGE
+          ══════════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        className="glass skeu-raised rounded-2xl px-4 py-3 flex items-center gap-3"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="relative flex-shrink-0">
+          <Bot size={18} className="text-db-lavender" />
+          <motion.div
+            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
+            style={{ background: '#4ecdc4', boxShadow: '0 0 6px #4ecdc4' }}
+            animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-db-text">AI Agents</span>
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+              style={{
+                background: 'rgba(78,205,196,0.12)',
+                color: '#4ecdc4',
+                border: '1px solid rgba(78,205,196,0.2)',
+              }}
+            >
+              <Sparkles size={9} />
+              4 agents active
+            </span>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={latestInsight}
+              className="text-[10px] text-db-text-dim mt-0.5 truncate"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+            >
+              {latestInsight}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          WEATHER CARD
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <ThermometerSun size={14} className="text-db-text-muted" />
+          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+            Local Weather
+          </span>
+        </div>
+        <WeatherCard
+          weather={weather}
+          loading={weatherLoading}
+          error={weatherError}
+          recommendation={weatherRecommendation}
+          onRefresh={weatherRefresh}
+        />
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          TODAY'S READINESS — Cognitive + Sleep Debt side by side
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Brain size={14} className="text-db-text-muted" />
+          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+            Today&apos;s Readiness
+          </span>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <CognitiveReadinessCard
+            score={cognitiveReadiness.score}
+            grade={cognitiveReadiness.grade}
+            label={cognitiveReadiness.label}
+            breakdown={cognitiveReadiness.breakdown}
+            peakHours={cognitiveReadiness.peakHours}
+            advice={cognitiveReadiness.advice}
+          />
+          <SleepDebtCard
+            totalDebtHours={sleepDebt.totalDebtHours}
+            weeklyDebtHours={sleepDebt.weeklyDebtHours}
+            trend={sleepDebt.trend}
+            recoveryNightsNeeded={sleepDebt.recoveryNightsNeeded}
+            impairmentLevel={sleepDebt.impairmentLevel}
+            impairmentEquivalent={sleepDebt.impairmentEquivalent}
+            recommendations={sleepDebt.recommendations}
+          />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          ENERGY FORECAST
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <BatteryCharging size={14} className="text-db-text-muted" />
+          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+            Energy Forecast
+          </span>
+        </div>
+        <EnergyForecast
+          data={energyForecastData}
+          peakStart={cognitiveReadiness.peakHours.start}
+          peakEnd={cognitiveReadiness.peakHours.end}
+        />
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          TONIGHT'S TEMPERATURE PROFILE
+          ══════════════════════════════════════════════════════════════════════ */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Moon size={14} className="text-db-text-muted" />
+          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+            Tonight&apos;s Temperature Profile
+          </span>
+        </div>
+        <div className="glass skeu-raised p-4 rounded-2xl">
+          <TemperatureProfileSelector
+            selectedId={selectedProfileId}
+            onSelect={setSelectedProfileId}
+          />
         </div>
       </section>
     </div>

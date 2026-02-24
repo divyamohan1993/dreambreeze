@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Moon, Wind, Volume2, StopCircle, Loader2 } from 'lucide-react';
+import { Moon, Wind, Volume2, StopCircle, Loader2, Cloud, Thermometer, Zap } from 'lucide-react';
+import PreSleepCheckin, { type PreSleepData } from '@/components/ui/PreSleepCheckin';
+import { useBlackboard } from '@/hooks/use-blackboard';
+import { useWeather } from '@/hooks/use-weather';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -10,7 +13,7 @@ type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
 type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
 type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
 
-type SessionPhase = 'idle' | 'calibrating' | 'active';
+type SessionPhase = 'pre-sleep' | 'idle' | 'calibrating' | 'active';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -64,7 +67,7 @@ function PostureIcon({ posture }: { posture: Posture }) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function SleepPage() {
-  const [phase, setPhase] = useState<SessionPhase>('idle');
+  const [phase, setPhase] = useState<SessionPhase>('pre-sleep');
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -80,6 +83,33 @@ export default function SleepPage() {
   const stopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const [wakeLockSupported, setWakeLockSupported] = useState(true);
+
+  // Blackboard agents
+  const {
+    snapshot,
+    insights,
+    startAgents,
+    stopAgents,
+    setPreSleepContext,
+    setWeatherData,
+    cycleCount,
+  } = useBlackboard();
+
+  // Weather
+  const { weather, loading: weatherLoading } = useWeather();
+
+  // ── Pass weather data to blackboard when available ─────────────────────
+  useEffect(() => {
+    if (weather) {
+      setWeatherData({
+        temperatureCelsius: weather.temperatureCelsius,
+        humidity: weather.humidity,
+        feelsLike: weather.feelsLike,
+        description: weather.description,
+        fetchedAt: weather.fetchedAt,
+      });
+    }
+  }, [weather, setWeatherData]);
 
   // ── Clock tick ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -146,6 +176,28 @@ export default function SleepPage() {
     };
   }, [phase]);
 
+  // ── Pre-sleep check-in handlers ─────────────────────────────────────────
+  const handlePreSleepComplete = useCallback(
+    (data: PreSleepData) => {
+      setPreSleepContext({
+        caffeineMg: data.caffeineMg,
+        caffeineLastIntakeHoursAgo: data.caffeineLastIntakeHoursAgo,
+        alcoholDrinks: data.alcoholDrinks,
+        exerciseIntensity: data.exerciseIntensity,
+        exerciseHoursAgo: data.exerciseHoursAgo,
+        stressLevel: data.stressLevel,
+        screenTimeMinutes: data.screenTimeMinutes,
+        mealHoursAgo: data.mealHoursAgo,
+      });
+      setPhase('idle');
+    },
+    [setPreSleepContext]
+  );
+
+  const handlePreSleepSkip = useCallback(() => {
+    setPhase('idle');
+  }, []);
+
   // ── Start session ────────────────────────────────────────────────────────
   const startSession = useCallback(() => {
     setPhase('calibrating');
@@ -154,8 +206,9 @@ export default function SleepPage() {
       setSessionStart(Date.now());
       setElapsed(0);
       setPhase('active');
+      startAgents();
     }, 4000);
-  }, []);
+  }, [startAgents]);
 
   // ── Stop session long-press handlers ─────────────────────────────────────
   const startStopHold = useCallback(() => {
@@ -166,13 +219,14 @@ export default function SleepPage() {
       setStopProgress(Math.min(progress, 100));
       if (progress >= 100) {
         if (stopTimerRef.current) clearInterval(stopTimerRef.current);
+        stopAgents();
         setPhase('idle');
         setSessionStart(null);
         setElapsed(0);
         setStopProgress(0);
       }
     }, 100);
-  }, []);
+  }, [stopAgents]);
 
   const cancelStopHold = useCallback(() => {
     if (stopTimerRef.current) clearInterval(stopTimerRef.current);
@@ -192,6 +246,18 @@ export default function SleepPage() {
       .toString()
       .padStart(2, '0')}`;
   };
+
+  // ── Latest insight for the info strip ────────────────────────────────────
+  const latestInsight = insights.length > 0 ? insights[insights.length - 1] : null;
+
+  // ── Pre-Sleep Check-in phase ──────────────────────────────────────────────
+  if (phase === 'pre-sleep') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] px-4 py-8">
+        <PreSleepCheckin onComplete={handlePreSleepComplete} onSkip={handlePreSleepSkip} />
+      </div>
+    );
+  }
 
   // ── Idle state — Start button ────────────────────────────────────────────
   if (phase === 'idle') {
@@ -270,6 +336,29 @@ export default function SleepPage() {
         </div>
       )}
 
+      {/* Weather indicator — top-right corner */}
+      {weather && (
+        <motion.div
+          className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+          }}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <Cloud size={12} className="text-db-text-muted/60" />
+          <span className="text-[10px] text-db-text-muted tabular-nums">
+            {Math.round(weather.temperatureCelsius)}°C
+          </span>
+          <Thermometer size={10} className="text-db-text-muted/40 ml-1" />
+          <span className="text-[10px] text-db-text-muted/60 tabular-nums">
+            {weather.humidity}%
+          </span>
+        </motion.div>
+      )}
+
       {/* Session Active breathing pulse */}
       <div className="flex items-center gap-2 mb-2">
         <motion.div
@@ -280,6 +369,12 @@ export default function SleepPage() {
         <span className="text-[11px] text-db-text-muted uppercase tracking-widest font-medium">
           Session Active
         </span>
+        {/* Agent cycle count — subtle */}
+        {cycleCount > 0 && (
+          <span className="text-[9px] text-db-text-muted/30 tabular-nums ml-1">
+            C{cycleCount}
+          </span>
+        )}
       </div>
 
       {/* ── Large clock ── */}
@@ -351,6 +446,29 @@ export default function SleepPage() {
             {NOISE_ICONS[noiseType]} {noiseType}
           </motion.span>
         </div>
+
+        {/* ── Agent insights info strip ── */}
+        <AnimatePresence mode="wait">
+          {latestInsight && (
+            <motion.div
+              key={latestInsight.timestamp}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl max-w-xs"
+              style={{
+                background: 'rgba(78, 205, 196, 0.05)',
+                border: '1px solid rgba(78, 205, 196, 0.1)',
+              }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Zap size={10} className="text-db-teal/50 flex-shrink-0" />
+              <p className="text-[10px] text-db-text-muted leading-snug line-clamp-2">
+                {latestInsight.message}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Stop Tracking (long-press 3s) ── */}

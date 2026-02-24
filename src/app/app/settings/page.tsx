@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Wifi,
@@ -27,7 +27,14 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  CloudSun,
+  Eye,
+  Leaf,
+  ShieldCheck,
 } from 'lucide-react';
+import TemperatureProfileSelector from '@/components/ui/TemperatureProfileSelector';
+import WeatherCard from '@/components/ui/WeatherCard';
+import { useWeather } from '@/hooks/use-weather';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -274,6 +281,51 @@ export default function SettingsPage() {
   const [targetBedtime, setTargetBedtime] = useState('22:30');
   const [targetWakeTime, setTargetWakeTime] = useState('06:30');
 
+  // Temperature Profile (persisted to localStorage)
+  const [selectedProfile, setSelectedProfile] = useState('optimal');
+
+  // Smart Features
+  const [weatherEnabled, setWeatherEnabled] = useState(false);
+  const [preSleepCheckin, setPreSleepCheckin] = useState(true);
+
+  // Weather data (only fetch when enabled)
+  const { weather, loading: weatherLoading, error: weatherError, recommendation: weatherRecommendation, refresh: refreshWeather } = useWeather();
+
+  // Persist temperature profile to localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('db-temperature-profile');
+    if (saved) setSelectedProfile(saved);
+  }, []);
+
+  const handleProfileSelect = useCallback((id: string) => {
+    setSelectedProfile(id);
+    localStorage.setItem('db-temperature-profile', id);
+  }, []);
+
+  // Persist smart features to localStorage
+  useEffect(() => {
+    const savedWeather = localStorage.getItem('db-weather-enabled');
+    const savedCheckin = localStorage.getItem('db-presleep-checkin');
+    if (savedWeather !== null) setWeatherEnabled(savedWeather === 'true');
+    if (savedCheckin !== null) setPreSleepCheckin(savedCheckin === 'true');
+  }, []);
+
+  const toggleWeather = useCallback(() => {
+    setWeatherEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem('db-weather-enabled', String(next));
+      return next;
+    });
+  }, []);
+
+  const togglePreSleepCheckin = useCallback(() => {
+    setPreSleepCheckin((prev) => {
+      const next = !prev;
+      localStorage.setItem('db-presleep-checkin', String(next));
+      return next;
+    });
+  }, []);
+
   // ── Test connection handler ──────────────────────────────────────────────
   const testConnection = useCallback(() => {
     setTestingConnection(true);
@@ -435,6 +487,19 @@ export default function SettingsPage() {
             )}
           </button>
         </div>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Temperature Profile
+          ══════════════════════════════════════════════════════════════════════ */}
+      <Section title="Temperature Profile">
+        <p className="text-xs text-db-text-dim -mt-1 mb-2">
+          Choose how DreamBreeze adjusts your fan throughout the night
+        </p>
+        <TemperatureProfileSelector
+          selectedId={selectedProfile}
+          onSelect={handleProfileSelect}
+        />
       </Section>
 
       {/* ══════════════════════════════════════════════════════════════════════
@@ -607,6 +672,138 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+        </div>
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Smart Features
+          ══════════════════════════════════════════════════════════════════════ */}
+      <Section title="Smart Features">
+        {/* Weather Integration toggle */}
+        <Toggle
+          label="Weather-Aware Adjustments"
+          description="Automatically adjust fan speed based on local weather conditions"
+          enabled={weatherEnabled}
+          onToggle={toggleWeather}
+        />
+
+        {weatherEnabled && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-3"
+          >
+            <div
+              className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{
+                background: 'rgba(78, 205, 196, 0.06)',
+                border: '1px solid rgba(78, 205, 196, 0.12)',
+              }}
+            >
+              <CloudSun size={14} className="text-db-teal mt-0.5 flex-shrink-0" />
+              <p className="text-[10px] text-db-text-dim leading-relaxed">
+                DreamBreeze uses your location to check weather conditions and adjust fan speed.
+                Weather data is fetched from Open-Meteo (free, no API key).
+                Your location is never stored.
+              </p>
+            </div>
+
+            <WeatherCard
+              weather={weather}
+              loading={weatherLoading}
+              error={weatherError}
+              recommendation={weatherRecommendation}
+              onRefresh={refreshWeather}
+            />
+          </motion.div>
+        )}
+
+        {/* Divider */}
+        <div className="border-t border-white/[0.04]" />
+
+        {/* Pre-Sleep Check-in toggle */}
+        <Toggle
+          label="Pre-Sleep Check-in"
+          description="Quick 30-second check-in about your day to optimize your sleep"
+          enabled={preSleepCheckin}
+          onToggle={togglePreSleepCheckin}
+        />
+      </Section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          DreamBreeze AI
+          ══════════════════════════════════════════════════════════════════════ */}
+      <Section title="DreamBreeze AI">
+        <p className="text-xs text-db-text-dim -mt-1 mb-3">
+          Meet the AI agents that work together to optimize your sleep
+        </p>
+
+        <div className="space-y-3">
+          {[
+            {
+              icon: Eye,
+              name: 'Posture Agent',
+              description: 'Detects your sleeping position and adjusts airflow direction for comfort',
+              color: '#4ecdc4',
+            },
+            {
+              icon: Thermometer,
+              name: 'Thermal Agent',
+              description: 'Monitors temperature patterns and adapts fan speed to your sleep phases',
+              color: '#f0a060',
+            },
+            {
+              icon: Music,
+              name: 'Sound Agent',
+              description: 'Generates adaptive soundscapes that evolve with your sleep depth',
+              color: '#6e5ea8',
+            },
+            {
+              icon: Leaf,
+              name: 'Energy Agent',
+              description: 'Minimizes power usage while maintaining your optimal comfort level',
+              color: '#4ecdc4',
+            },
+          ].map(({ icon: Icon, name, description, color }) => (
+            <div
+              key={name}
+              className="flex items-start gap-3 px-3 py-2.5 rounded-xl"
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{
+                  background: `radial-gradient(circle, ${color}20 0%, transparent 70%)`,
+                  border: `1px solid ${color}25`,
+                }}
+              >
+                <Icon size={14} style={{ color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-db-text">{name}</p>
+                <p className="text-[10px] text-db-text-muted mt-0.5 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl mt-1"
+          style={{
+            background: 'rgba(78, 205, 196, 0.04)',
+            border: '1px solid rgba(78, 205, 196, 0.10)',
+          }}
+        >
+          <ShieldCheck size={13} className="text-db-teal flex-shrink-0" />
+          <p className="text-[10px] text-db-text-muted leading-relaxed">
+            All AI processing happens on your device. No data is sent to any server.
+          </p>
         </div>
       </Section>
 
