@@ -1,9 +1,9 @@
 /**
- * Energy Agent — manages morning wake-up sequence and next-day energy forecast.
+ * Energy Agent -- manages morning wake-up sequence and next-day energy forecast.
  *
  * Uses the Two-Process Model (Borbely):
- * - Process S (homeostatic sleep pressure) — builds during wake, dissipates during sleep
- * - Process C (circadian alertness) — 24hr oscillation peaking ~10AM and ~9PM
+ * - Process S (homeostatic sleep pressure) -- builds during wake, dissipates during sleep
+ * - Process C (circadian alertness) -- 24hr oscillation peaking ~10AM and ~9PM
  *
  * Combines these to predict cognitive readiness and trigger optimal wake sequence.
  */
@@ -98,7 +98,7 @@ export function runEnergyAgent(): void {
         type: 'TRIGGER_WAKE_SEQUENCE',
         minutesUntilAlarm: 30,
       },
-      reasoning: `${hoursSlept.toFixed(1)}h slept, pre-wake window — starting gradual wake sequence`,
+      reasoning: `${hoursSlept.toFixed(1)}h slept, pre-wake window -- starting gradual wake sequence`,
       priority: 'high',
       expiresAt: Date.now() + 300_000,
     };
@@ -111,7 +111,7 @@ export function runEnergyAgent(): void {
       confidence: 0.7,
       action: { type: 'ADJUST_FAN_DELTA', delta: +15 },
       reasoning:
-        'Morning energy mode — gradually increasing airflow for alertness',
+        'Morning energy mode -- gradually increasing airflow for alertness',
       priority: 'medium',
       expiresAt: Date.now() + 300_000,
     };

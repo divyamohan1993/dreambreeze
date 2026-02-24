@@ -1,5 +1,5 @@
 /**
- * DataVault — user's data control center for DreamBreeze.
+ * DataVault -- user's data control center for DreamBreeze.
  *
  * Implements data principal rights under:
  * - DPDP Act 2023 (India): Section 12 (right to data portability), Section 13 (right to erasure)
@@ -11,7 +11,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface DataSummary {
   profile: {
@@ -52,7 +52,7 @@ export interface ExportedData {
   localPreferences: Record<string, unknown>;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const RETENTION_DAYS = 365;
 const EXPORT_VERSION = '1.0.0';
@@ -63,7 +63,7 @@ const LOCAL_STORAGE_KEYS = [
   'dreambreeze-ui',
 ];
 
-// ── DataVault Class ────────────────────────────────────────────────────────────
+// -- DataVault Class ------------------------------------------------------------
 
 export class DataVault {
   private _supabase: SupabaseClient | null;
@@ -142,12 +142,12 @@ export class DataVault {
   }
 
   /**
-   * Delete ALL user data — the nuclear option.
+   * Delete ALL user data -- the nuclear option.
    *
    * Compliant with DPDP Section 13 and GDPR Article 17 (right to erasure).
    * Removes data from Supabase and local storage.
    *
-   * Order: events → sessions → fan configs → consent log → profile → local
+   * Order: events -> sessions -> fan configs -> consent log -> profile -> local
    */
   async deleteAllData(): Promise<{ success: boolean; errors: string[] }> {
     const errors: string[] = [];
@@ -316,7 +316,7 @@ export class DataVault {
     return oldSessions.length;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _exportLocalData(): Record<string, unknown> {
     if (typeof window === 'undefined') return {};

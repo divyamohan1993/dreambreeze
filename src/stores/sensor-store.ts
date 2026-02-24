@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface AccelerometerData {
   x: number;
@@ -15,7 +15,7 @@ export interface GyroscopeData {
   gamma: number;
 }
 
-// ── State Shape ────────────────────────────────────────────────────────────────
+// -- State Shape ----------------------------------------------------------------
 
 export interface SensorState {
   /* accelerometer */
@@ -45,7 +45,7 @@ export interface SensorState {
   reset: () => void;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+// -- Store ----------------------------------------------------------------------
 
 export const useSensorStore = create<SensorState>()(
   subscribeWithSelector((set, get) => ({

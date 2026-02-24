@@ -1,5 +1,5 @@
 /**
- * Blackboard Controller — resolves conflicting agent hypotheses into actions.
+ * Blackboard Controller -- resolves conflicting agent hypotheses into actions.
  *
  * Priority-weighted conflict resolution:
  * 1. Critical always wins

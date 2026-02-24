@@ -1,5 +1,5 @@
 /**
- * Blackboard Architecture — shared knowledge store for DreamBreeze agents.
+ * Blackboard Architecture -- shared knowledge store for DreamBreeze agents.
  *
  * Agents write hypotheses to the blackboard. The controller evaluates
  * and selects the best composite action each cycle (every 30 seconds).
@@ -104,7 +104,7 @@ class Blackboard {
     this._notifyListeners();
   }
 
-  /** Update shared context — any agent or sensor can write here */
+  /** Update shared context -- any agent or sensor can write here */
   updateContext(partial: Partial<SleepContext>): void {
     this._context = { ...this._context, ...partial };
     this._notifyListeners();

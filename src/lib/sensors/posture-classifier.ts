@@ -8,7 +8,7 @@
 
 import type { Posture } from '@/stores/sleep-store';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface PostureResult {
   posture: Posture;
@@ -27,7 +27,7 @@ export interface AccelerometerSample {
   timestamp: number;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const WINDOW_SIZE = 50; // rolling window of samples
 const HYSTERESIS_MS = 10_000; // hold posture for 10 seconds before changing
@@ -36,7 +36,7 @@ const PRONE_Z_THRESHOLD = -0.3; // normalized z threshold for face-down
 const FETAL_CURL_THRESHOLD = 0.15; // additional acceleration variance for fetal
 const G = 9.81; // gravitational acceleration
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 function toDegrees(radians: number): number {
   return radians * (180 / Math.PI);
@@ -71,7 +71,7 @@ function stddev(values: number[]): number {
   return Math.sqrt(variance);
 }
 
-// ── Classifier Class ───────────────────────────────────────────────────────────
+// -- Classifier Class -----------------------------------------------------------
 
 export class PostureClassifier {
   private _window: AccelerometerSample[] = [];
@@ -141,7 +141,7 @@ export class PostureClassifier {
     this._pendingStartTime = 0;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _classifyRaw(
     pitch: number,
@@ -188,21 +188,21 @@ export class PostureClassifier {
   }
 
   private _applyHysteresis(rawPosture: Posture, timestamp: number): Posture {
-    // First reading — accept immediately
+    // First reading -- accept immediately
     if (this._currentPosture === 'unknown') {
       this._currentPosture = rawPosture;
       this._lastChangeTime = timestamp;
       return rawPosture;
     }
 
-    // Same as current — no change, clear pending
+    // Same as current -- no change, clear pending
     if (rawPosture === this._currentPosture) {
       this._pendingPosture = null;
       this._pendingStartTime = 0;
       return this._currentPosture;
     }
 
-    // Different — start or continue pending
+    // Different -- start or continue pending
     if (this._pendingPosture !== rawPosture) {
       // New pending posture
       this._pendingPosture = rawPosture;
@@ -221,12 +221,12 @@ export class PostureClassifier {
       return rawPosture;
     }
 
-    // Not stable yet — keep current
+    // Not stable yet -- keep current
     return this._currentPosture;
   }
 }
 
-// ── Singleton Export ───────────────────────────────────────────────────────────
+// -- Singleton Export -----------------------------------------------------------
 
 let _classifierInstance: PostureClassifier | null = null;
 

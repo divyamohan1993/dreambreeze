@@ -8,12 +8,12 @@
  * Brown noise uses integrated white noise with -6dB/octave rolloff.
  */
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const BUFFER_SIZE = 4096;
 const NOISE_BUFFER_DURATION = 2; // seconds of pre-generated noise
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface NoiseNode {
   node: AudioNode;
@@ -21,7 +21,7 @@ export interface NoiseNode {
   stop: () => void;
 }
 
-// ── White Noise ────────────────────────────────────────────────────────────────
+// -- White Noise ----------------------------------------------------------------
 
 /**
  * Generate white noise: flat power spectrum, each sample is random.
@@ -54,7 +54,7 @@ export function generateWhiteNoise(ctx: AudioContext): NoiseNode {
   };
 }
 
-// ── Pink Noise ─────────────────────────────────────────────────────────────────
+// -- Pink Noise -----------------------------------------------------------------
 
 /**
  * Generate pink noise: -3dB/octave power spectrum.
@@ -113,7 +113,7 @@ export function generatePinkNoise(ctx: AudioContext): NoiseNode {
   };
 }
 
-// ── Brown Noise ────────────────────────────────────────────────────────────────
+// -- Brown Noise ----------------------------------------------------------------
 
 /**
  * Generate brown (Brownian/red) noise: -6dB/octave power spectrum.
@@ -153,7 +153,7 @@ export function generateBrownNoise(ctx: AudioContext): NoiseNode {
   };
 }
 
-// ── Utility: Create filtered noise ─────────────────────────────────────────────
+// -- Utility: Create filtered noise ---------------------------------------------
 
 /**
  * Create a low-pass filtered version of any noise node.

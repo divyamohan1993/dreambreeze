@@ -24,7 +24,7 @@ import {
   X,
 } from 'lucide-react';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 interface ConsentItem {
   id: string;
@@ -44,7 +44,7 @@ interface Regulation {
 
 type ModalType = 'delete-data' | 'delete-account' | 'export' | null;
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const TIMEZONE_REGULATIONS: Record<string, Regulation> = {
   'Asia/Kolkata': {
@@ -140,7 +140,7 @@ const DATA_FIELDS = [
   'Session duration',
 ];
 
-// ── Consent Toggle Card ────────────────────────────────────────────────────────
+// -- Consent Toggle Card --------------------------------------------------------
 
 function ConsentCard({
   item,
@@ -199,7 +199,7 @@ function ConsentCard({
   );
 }
 
-// ── Confirmation Modal ─────────────────────────────────────────────────────────
+// -- Confirmation Modal ---------------------------------------------------------
 
 function ConfirmModal({
   type,
@@ -354,7 +354,7 @@ function ConfirmModal({
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
+// -- Main Component -------------------------------------------------------------
 
 export default function PrivacyPage() {
   const [regulation, setRegulation] = useState<Regulation>(DEFAULT_REGULATION);
@@ -489,7 +489,7 @@ export default function PrivacyPage() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto space-y-6">
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div className="text-center space-y-2">
         <div className="flex justify-center">
           <div
@@ -506,9 +506,9 @@ export default function PrivacyPage() {
         </p>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Applicable Regulations
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="glass skeu-raised rounded-2xl p-4 space-y-3">
         <h2 className="text-[11px] text-db-text-muted uppercase tracking-wider font-medium">
           Applicable Regulations
@@ -536,9 +536,9 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Consent Management
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-db-text-dim uppercase tracking-wider">
           Consent Management
@@ -553,9 +553,9 @@ export default function PrivacyPage() {
         ))}
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Data Summary
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="glass skeu-raised rounded-2xl p-4 space-y-3">
         <h2 className="text-[11px] text-db-text-muted uppercase tracking-wider font-medium">
           Data Summary
@@ -610,9 +610,9 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Actions
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-db-text-dim uppercase tracking-wider">
           Data Actions
@@ -663,9 +663,9 @@ export default function PrivacyPage() {
         </button>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Grievance Redressal (DPDP)
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       {regulation.code === 'DPDP' && (
         <section className="glass skeu-raised rounded-2xl p-4 space-y-3">
           <h2 className="text-[11px] text-db-text-muted uppercase tracking-wider font-medium">
@@ -701,9 +701,9 @@ export default function PrivacyPage() {
         </section>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Privacy Policy (Collapsible Sections)
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-db-text-dim uppercase tracking-wider">
           Privacy Policy

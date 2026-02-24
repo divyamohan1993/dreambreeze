@@ -70,7 +70,7 @@ export function useFanControl(): UseFanControlReturn {
       const nextSpeed = smoothSpeed(currentSpeed, target);
       storeSetSpeed(nextSpeed);
       controllerRef.current?.setSpeed(nextSpeed).catch(() => {
-        // Silent failure — we will retry next interval
+        // Silent failure -- we will retry next interval
       });
     }, RAMP_INTERVAL_MS);
 
@@ -102,7 +102,7 @@ export function useFanControl(): UseFanControlReturn {
     });
   }, [currentPosture, currentSleepStage, mode, isTracking, isConnected, setTargetSpeed]);
 
-  // ── Connection methods ──────────────────────────────────────────────────
+  // -- Connection methods --------------------------------------------------
 
   const setSpeed = useCallback(
     async (newSpeed: number) => {

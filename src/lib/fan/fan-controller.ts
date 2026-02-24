@@ -3,13 +3,13 @@
  *
  * Defines the FanController interface and provides:
  * - DemoFanController (local-only, no hardware)
- * - mapPostureToSpeed() — posture + stage → target speed
- * - smoothSpeed() — gradual speed transitions
+ * - mapPostureToSpeed() -- posture + stage -> target speed
+ * - smoothSpeed() -- gradual speed transitions
  */
 
 import type { Posture, SleepStage } from '@/stores/sleep-store';
 
-// ── Interface ──────────────────────────────────────────────────────────────────
+// -- Interface ------------------------------------------------------------------
 
 export interface FanController {
   /** Set fan speed (0-100). */
@@ -28,7 +28,7 @@ export interface FanController {
   isConnected(): boolean;
 }
 
-// ── Demo Fan Controller ────────────────────────────────────────────────────────
+// -- Demo Fan Controller --------------------------------------------------------
 
 /**
  * A demo fan controller that stores speed locally.
@@ -66,18 +66,18 @@ export class DemoFanController implements FanController {
   }
 }
 
-// ── Posture → Speed Mapping ────────────────────────────────────────────────────
+// -- Posture -> Speed Mapping ----------------------------------------------------
 
 /**
  * Map a posture + sleep stage combination to a target fan speed (0-100).
  *
  * Logic:
- * - Prone → minimal airflow (face down, avoid blowing on face)
- * - Fetal → low (cold signal, user likely feeling chilly)
- * - Supine + deep → moderate-low (comfortable, body temp drops)
- * - Supine + REM → higher (REM thermoregulation is impaired)
- * - Lateral + REM → moderate-high
- * - Awake → comfortable default (user might be adjusting)
+ * - Prone -> minimal airflow (face down, avoid blowing on face)
+ * - Fetal -> low (cold signal, user likely feeling chilly)
+ * - Supine + deep -> moderate-low (comfortable, body temp drops)
+ * - Supine + REM -> higher (REM thermoregulation is impaired)
+ * - Lateral + REM -> moderate-high
+ * - Awake -> comfortable default (user might be adjusting)
  */
 export function mapPostureToSpeed(posture: Posture, sleepStage: SleepStage): number {
   // Awake override: consistent user-comfort speed
@@ -93,7 +93,7 @@ export function mapPostureToSpeed(posture: Posture, sleepStage: SleepStage): num
       }
 
     case 'prone':
-      // Face down — minimal regardless of stage
+      // Face down -- minimal regardless of stage
       return 25;
 
     case 'left-lateral':
@@ -106,7 +106,7 @@ export function mapPostureToSpeed(posture: Posture, sleepStage: SleepStage): num
       }
 
     case 'fetal':
-      // Cold signal — keep fan very low
+      // Cold signal -- keep fan very low
       return 20;
 
     case 'unknown':
@@ -116,7 +116,7 @@ export function mapPostureToSpeed(posture: Posture, sleepStage: SleepStage): num
   }
 }
 
-// ── Speed Smoothing ────────────────────────────────────────────────────────────
+// -- Speed Smoothing ------------------------------------------------------------
 
 /**
  * Smoothly ramp from current speed to target speed, changing at most

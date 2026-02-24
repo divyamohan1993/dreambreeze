@@ -7,7 +7,7 @@
  * - Calibration (store baseline when phone is placed flat on mattress)
  */
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface AccelerometerReading {
   x: number;
@@ -30,7 +30,7 @@ export interface SensorReading {
 
 export type SensorCallback = (reading: SensorReading) => void;
 
-// ── Permission helpers (typed for iOS 13+) ─────────────────────────────────────
+// -- Permission helpers (typed for iOS 13+) -------------------------------------
 
 interface DeviceMotionEventWithPermission extends DeviceMotionEvent {
   requestPermission?: () => Promise<'granted' | 'denied'>;
@@ -44,7 +44,7 @@ function hasPermissionAPI(): boolean {
   );
 }
 
-// ── Class ──────────────────────────────────────────────────────────────────────
+// -- Class ----------------------------------------------------------------------
 
 export class DeviceMotionSensor {
   private _isRunning = false;
@@ -53,7 +53,7 @@ export class DeviceMotionSensor {
   private _intervalMs: number;
   private _lastEmit = 0;
 
-  /** Calibration baseline — subtracted from raw readings. */
+  /** Calibration baseline -- subtracted from raw readings. */
   private _baseline: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
   private _isCalibrated = false;
 
@@ -65,7 +65,7 @@ export class DeviceMotionSensor {
     this._intervalMs = 1000 / sampleRate;
   }
 
-  // ── Public getters ────────────────────────────────────────────────────────
+  // -- Public getters --------------------------------------------------------
 
   get isRunning(): boolean {
     return this._isRunning;
@@ -79,7 +79,7 @@ export class DeviceMotionSensor {
     return this._sampleRate;
   }
 
-  // ── Permission ────────────────────────────────────────────────────────────
+  // -- Permission ------------------------------------------------------------
 
   /**
    * Request sensor permission. On iOS 13+ this triggers a system dialog.
@@ -101,7 +101,7 @@ export class DeviceMotionSensor {
     }
   }
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // -- Lifecycle -------------------------------------------------------------
 
   /**
    * Set the callback that receives sensor readings.
@@ -135,7 +135,7 @@ export class DeviceMotionSensor {
     this._isRunning = false;
   }
 
-  // ── Calibration ───────────────────────────────────────────────────────────
+  // -- Calibration -----------------------------------------------------------
 
   /**
    * Store the current accelerometer reading as the zero baseline.
@@ -155,7 +155,7 @@ export class DeviceMotionSensor {
     this._isCalibrated = false;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _handleMotion(event: DeviceMotionEvent): void {
     const now = performance.now();

@@ -9,7 +9,7 @@
 import type { FanController } from './fan-controller';
 import type { Posture, SleepStage } from '@/stores/sleep-store';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface WebhookConfig {
   url: string; // The webhook endpoint URL
@@ -27,7 +27,7 @@ export interface WebhookPayload {
   source: 'dreambreeze';
 }
 
-// ── Webhook Fan Controller ─────────────────────────────────────────────────────
+// -- Webhook Fan Controller -----------------------------------------------------
 
 export class WebhookFanController implements FanController {
   private _config: WebhookConfig;
@@ -46,7 +46,7 @@ export class WebhookFanController implements FanController {
     };
   }
 
-  // ── FanController interface ───────────────────────────────────────────────
+  // -- FanController interface -----------------------------------------------
 
   async setSpeed(speed: number): Promise<void> {
     const clamped = Math.max(0, Math.min(100, Math.round(speed)));
@@ -100,7 +100,7 @@ export class WebhookFanController implements FanController {
     return this._connected;
   }
 
-  // ── Additional methods ────────────────────────────────────────────────────
+  // -- Additional methods ----------------------------------------------------
 
   /**
    * Update the current posture (included in webhook payloads).
@@ -123,7 +123,7 @@ export class WebhookFanController implements FanController {
     return this._lastError;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private async _send(payload: WebhookPayload): Promise<void> {
     const controller = new AbortController();

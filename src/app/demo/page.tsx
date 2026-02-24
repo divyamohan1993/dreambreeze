@@ -23,10 +23,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    DEMO TIMELINE
    60-second scripted simulation of a full night's sleep
-   ═══════════════════════════════════════════════════════════════════════════ */
+   =========================================================================== */
 
 interface TimelineFrame {
   timeRange: [number, number]; // seconds
@@ -153,7 +153,7 @@ function getFrame(seconds: number): TimelineFrame {
   return TIMELINE[TIMELINE.length - 1];
 }
 
-/* ───────────────────────── Animated fan visual ────────────────────────── */
+/* ------------------------- Animated fan visual -------------------------- */
 function DemoFan({ speed }: { speed: number }) {
   const duration = speed > 0 ? Math.max(0.5, 10 / (speed / 10)) : 0;
   return (
@@ -216,7 +216,7 @@ function DemoFan({ speed }: { speed: number }) {
   );
 }
 
-/* ───────────────────────── Sound wave viz ─────────────────────────────── */
+/* ------------------------- Sound wave viz ------------------------------- */
 function SoundWave({ volume, type }: { volume: number; type: string }) {
   return (
     <div className="flex h-8 items-end gap-0.5">
@@ -238,7 +238,7 @@ function SoundWave({ volume, type }: { volume: number; type: string }) {
   );
 }
 
-/* ───────────────────────── Sleep score card ────────────────────────────── */
+/* ------------------------- Sleep score card ------------------------------ */
 function SleepScoreCard() {
   return (
     <motion.div
@@ -320,9 +320,9 @@ function SleepScoreCard() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    DEMO PAGE
-   ═══════════════════════════════════════════════════════════════════════════ */
+   =========================================================================== */
 export default function DemoPage() {
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -491,7 +491,7 @@ export default function DemoPage() {
 
         {/* Dashboard grid */}
         <div className="grid gap-4 md:grid-cols-3">
-          {/* Left column — Sleep Stage & Posture */}
+          {/* Left column -- Sleep Stage & Posture */}
           <div className="space-y-4">
             {/* Sleep stage */}
             <div className="glass skeu-raised p-5">
@@ -564,7 +564,7 @@ export default function DemoPage() {
             </div>
           </div>
 
-          {/* Center column — Fan & Sound */}
+          {/* Center column -- Fan & Sound */}
           <div className="space-y-4">
             {/* Fan */}
             <div className="glass skeu-raised flex flex-col items-center p-5">
@@ -626,7 +626,7 @@ export default function DemoPage() {
             </div>
           </div>
 
-          {/* Right column — Event log or Sleep score */}
+          {/* Right column -- Event log or Sleep score */}
           <div className="space-y-4">
             {showScore ? (
               <SleepScoreCard />

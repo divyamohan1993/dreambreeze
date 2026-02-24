@@ -18,7 +18,7 @@ import {
   type NoiseNode,
 } from './noise-generator';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 interface ActiveLayer {
   noiseType: NoiseType;
@@ -36,7 +36,7 @@ interface StageMixConfig {
   masterVolume: number; // multiplier relative to user's base volume
 }
 
-// ── Stage-specific mix presets ─────────────────────────────────────────────────
+// -- Stage-specific mix presets -------------------------------------------------
 
 function getStageMix(stage: SleepStage, baseVolume: number): StageMixConfig {
   switch (stage) {
@@ -79,7 +79,7 @@ function getStageMix(stage: SleepStage, baseVolume: number): StageMixConfig {
   }
 }
 
-// ── Soundscape Engine ──────────────────────────────────────────────────────────
+// -- Soundscape Engine ----------------------------------------------------------
 
 export class SoundscapeEngine {
   private _ctx: AudioContext | null = null;
@@ -263,7 +263,7 @@ export class SoundscapeEngine {
     this._isPlaying = false;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _addLayer(
     noiseType: NoiseType,

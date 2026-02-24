@@ -10,7 +10,7 @@
 
 import type { SleepStage, Posture, PostureRecord, StageRecord, SleepEvent, SleepSessionData } from '@/stores/sleep-store';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface SleepInsight {
   category: 'posture' | 'duration' | 'quality' | 'stages' | 'environment' | 'general';
@@ -42,7 +42,7 @@ export interface HistoricalSession {
   score: number;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 function computeStageDurations(stageHistory: StageRecord[], totalDurationMs: number): SleepStageDurations {
   if (stageHistory.length === 0) {
@@ -106,7 +106,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-// ── Sleep Agent Class ──────────────────────────────────────────────────────────
+// -- Sleep Agent Class ----------------------------------------------------------
 
 export class SleepAgent {
   /**
@@ -194,7 +194,7 @@ export class SleepAgent {
         category: 'quality',
         severity: 'info',
         title: 'Minimal Disruptions',
-        description: `Only ${awakenings} awakening(s) — your sleep environment seems well-optimized.`,
+        description: `Only ${awakenings} awakening(s) -- your sleep environment seems well-optimized.`,
       });
     }
 
@@ -204,7 +204,7 @@ export class SleepAgent {
         category: 'posture',
         severity: 'suggestion',
         title: 'Excessive Tossing',
-        description: `${postureChanges} posture changes detected. This may indicate discomfort — check mattress firmness and pillow height.`,
+        description: `${postureChanges} posture changes detected. This may indicate discomfort -- check mattress firmness and pillow height.`,
       });
     } else if (postureChanges < 5 && totalMinutes > 120) {
       insights.push({
@@ -407,7 +407,7 @@ export class SleepAgent {
       return [
         'Start tracking your sleep tonight to receive personalized recommendations.',
         'Place your phone flat on the mattress near your pillow for best posture detection.',
-        'Keep your room between 18-22°C (65-72°F) for optimal sleep.',
+        'Keep your room between 18-22 degC (65-72 degF) for optimal sleep.',
       ];
     }
 
@@ -489,12 +489,12 @@ export class SleepAgent {
     return tips;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _getGreeting(score: number): string {
     if (score >= 85) return 'Good morning! You had an excellent night of sleep.';
     if (score >= 70) return 'Good morning! You had a solid night of sleep.';
-    if (score >= 50) return 'Good morning. Your sleep was fair — there is room for improvement.';
-    return 'Good morning. Your sleep could use some attention — see the tips below.';
+    if (score >= 50) return 'Good morning. Your sleep was fair -- there is room for improvement.';
+    return 'Good morning. Your sleep could use some attention -- see the tips below.';
   }
 }

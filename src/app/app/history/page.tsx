@@ -32,7 +32,7 @@ import EnergyForecast from '@/components/charts/EnergyForecast';
 import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
 import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
 type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
@@ -53,7 +53,7 @@ interface SleepSession {
   insights: string[];
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const POSTURE_LABELS: Record<Posture, string> = {
   supine: 'Back',
@@ -70,7 +70,7 @@ const STAGE_COLORS: Record<string, string> = {
   Deep: '#1a6b66',
 };
 
-// ── Score color helper ─────────────────────────────────────────────────────────
+// -- Score color helper ---------------------------------------------------------
 
 function scoreColor(score: number): string {
   if (score >= 85) return '#4ecdc4';
@@ -86,7 +86,7 @@ function scoreBg(score: number): string {
   return 'rgba(233, 69, 96, 0.15)';
 }
 
-// ── Generate mock sessions ─────────────────────────────────────────────────────
+// -- Generate mock sessions -----------------------------------------------------
 
 function generateMockSessions(): SleepSession[] {
   const sessions: SleepSession[] = [];
@@ -174,7 +174,7 @@ function generateMockSessions(): SleepSession[] {
   return sessions;
 }
 
-// ── Mini Timeline Bar ──────────────────────────────────────────────────────────
+// -- Mini Timeline Bar ----------------------------------------------------------
 
 function MiniTimelineBar({ timeline }: { timeline: { time: string; stage: number }[] }) {
   const stageColors = ['#1a6b66', '#4ecdc4', '#6e5ea8', '#f0a060'];
@@ -191,7 +191,7 @@ function MiniTimelineBar({ timeline }: { timeline: { time: string; stage: number
   );
 }
 
-// ── Custom Recharts Tooltip ────────────────────────────────────────────────────
+// -- Custom Recharts Tooltip ----------------------------------------------------
 
 function ChartTooltip({
   active,
@@ -215,7 +215,7 @@ function ChartTooltip({
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
+// -- Main Component -------------------------------------------------------------
 
 export default function HistoryPage() {
   const sessions = useMemo(() => generateMockSessions(), []);
@@ -245,7 +245,7 @@ export default function HistoryPage() {
   const lastScore = sessions[sessions.length - 1]?.sleepScore || 0;
   const improvement = lastScore - firstScore;
 
-  // ── Cognitive Readiness (last night) ────────────────────────────────────────
+  // -- Cognitive Readiness (last night) ----------------------------------------
   const cognitiveReadiness = useMemo(() => {
     const lastSession = sessions[sessions.length - 1];
     const hoursSlept = lastSession ? lastSession.duration / 60 : 7;
@@ -263,14 +263,14 @@ export default function HistoryPage() {
     });
   }, [sessions]);
 
-  // ── Energy Forecast (today) ─────────────────────────────────────────────────
+  // -- Energy Forecast (today) -------------------------------------------------
   const energyForecastData = useMemo(() => {
     const lastSession = sessions[sessions.length - 1];
     const hoursSlept = lastSession ? lastSession.duration / 60 : 7;
     return generateEnergyForecast(hoursSlept, 4.5);
   }, [sessions]);
 
-  // ── 7-Night Cognitive Readiness Trend (demo data) ───────────────────────────
+  // -- 7-Night Cognitive Readiness Trend (demo data) ---------------------------
   const cognitiveScoreTrend = useMemo(() => {
     const demoScores = [58, 62, 55, 71, 68, 74, cognitiveReadiness.score];
     return sessions.map((s, i) => ({
@@ -293,9 +293,9 @@ export default function HistoryPage() {
         <p className="text-xs text-db-text-dim mt-0.5">Last 7 nights</p>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Summary Cards (horizontal scroll)
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
         {/* Avg Score */}
         <div className="glass skeu-raised rounded-2xl p-4 min-w-[140px] flex-shrink-0">
@@ -355,9 +355,9 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Row 1: Sleep Debt | Cognitive Readiness (side by side)
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <SleepDebtCard
           totalDebtHours={4.5}
@@ -365,7 +365,7 @@ export default function HistoryPage() {
           trend="improving"
           recoveryNightsNeeded={2}
           impairmentLevel="mild"
-          impairmentEquivalent="Similar to 0.03% BAC — mildly reduced reaction time and working memory."
+          impairmentEquivalent="Similar to 0.03% BAC -- mildly reduced reaction time and working memory."
           recommendations={[
             'Go to bed 30 minutes earlier for the next 3 nights.',
             'Avoid screens 1 hour before bedtime to improve onset latency.',
@@ -382,18 +382,18 @@ export default function HistoryPage() {
         />
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Row 2: Energy Forecast (full width)
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <EnergyForecast
         data={energyForecastData}
         peakStart={cognitiveReadiness.peakHours.start}
         peakEnd={cognitiveReadiness.peakHours.end}
       />
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Row 3: 7-Night Cognitive Readiness Trend
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="glass skeu-raised rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-db-text-dim flex items-center gap-2">
@@ -469,16 +469,16 @@ export default function HistoryPage() {
             </>
           ) : (
             <>
-              <span className="text-db-amber font-medium">declining</span> — consider
+              <span className="text-db-amber font-medium">declining</span> -- consider
               prioritizing sleep consistency.
             </>
           )}
         </p>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Session List
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-db-text-dim flex items-center gap-2">
           <Moon size={14} />
@@ -723,9 +723,9 @@ export default function HistoryPage() {
         })}
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Trends
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section className="glass skeu-raised rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-db-text-dim flex items-center gap-2">

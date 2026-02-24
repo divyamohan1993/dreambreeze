@@ -52,7 +52,7 @@ export function useBlackboard() {
         ]);
       },
       onWakeSequence: (_minutes) => {
-        // Trigger morning mode — gradual volume decrease, fan increase
+        // Trigger morning mode -- gradual volume decrease, fan increase
         useFanStore.setState({ mode: 'auto' });
       },
     });

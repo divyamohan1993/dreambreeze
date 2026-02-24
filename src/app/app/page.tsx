@@ -35,7 +35,7 @@ import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
 import { calculateSleepDebt } from '@/lib/ai/sleep-debt';
 import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
 type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
@@ -61,7 +61,7 @@ interface TimelinePoint {
   label: string;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const POSTURES: Posture[] = ['supine', 'prone', 'left-lateral', 'right-lateral', 'fetal'];
 const STAGES: SleepStage[] = ['awake', 'light', 'deep', 'rem'];
@@ -93,7 +93,7 @@ const NOISE_LABELS: Record<NoiseType, string> = {
   forest: 'Forest',
 };
 
-// ── Posture SVG ────────────────────────────────────────────────────────────────
+// -- Posture SVG ----------------------------------------------------------------
 
 function PostureSilhouette({ posture, className = '' }: { posture: Posture; className?: string }) {
   const paths: Record<Posture, string> = {
@@ -121,7 +121,7 @@ function PostureSilhouette({ posture, className = '' }: { posture: Posture; clas
   );
 }
 
-// ── Timeline data generator ────────────────────────────────────────────────────
+// -- Timeline data generator ----------------------------------------------------
 
 function generateTimeline(): TimelinePoint[] {
   const points: TimelinePoint[] = [];
@@ -145,7 +145,7 @@ function generateTimeline(): TimelinePoint[] {
   return points;
 }
 
-// ── Custom Tooltip ─────────────────────────────────────────────────────────────
+// -- Custom Tooltip -------------------------------------------------------------
 
 function TimelineTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.[0]) return null;
@@ -161,7 +161,7 @@ function TimelineTooltip({ active, payload, label }: { active?: boolean; payload
   );
 }
 
-// ── LED Strip ──────────────────────────────────────────────────────────────────
+// -- LED Strip ------------------------------------------------------------------
 
 function LEDStrip({ level }: { level: SpeedLevel }) {
   const colors = ['#4ecdc4', '#4ecdc4', '#f0a060', '#e94560', '#e94560'];
@@ -184,7 +184,7 @@ function LEDStrip({ level }: { level: SpeedLevel }) {
   );
 }
 
-// ── Metric Card ────────────────────────────────────────────────────────────────
+// -- Metric Card ----------------------------------------------------------------
 
 function MetricCard({
   icon: Icon,
@@ -213,7 +213,7 @@ function MetricCard({
   );
 }
 
-// ── Main Dashboard ─────────────────────────────────────────────────────────────
+// -- Main Dashboard -------------------------------------------------------------
 
 export default function DashboardPage() {
   const [speedLevel, setSpeedLevel] = useState<SpeedLevel>(2);
@@ -231,13 +231,13 @@ export default function DashboardPage() {
   });
   const [timeline] = useState<TimelinePoint[]>(() => generateTimeline());
 
-  // ── Weather hook ────────────────────────────────────────────────────────
+  // -- Weather hook --------------------------------------------------------
   const { weather, loading: weatherLoading, error: weatherError, recommendation: weatherRecommendation, refresh: weatherRefresh } = useWeather();
 
-  // ── Temperature profile state ──────────────────────────────────────────
+  // -- Temperature profile state ------------------------------------------
   const [selectedProfileId, setSelectedProfileId] = useState('optimal');
 
-  // ── Agent status animation ─────────────────────────────────────────────
+  // -- Agent status animation ---------------------------------------------
   const [latestInsight, setLatestInsight] = useState('Monitoring sleep patterns...');
   useEffect(() => {
     const insights = [
@@ -256,7 +256,7 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── Cognitive readiness (demo data) ────────────────────────────────────
+  // -- Cognitive readiness (demo data) ------------------------------------
   const cognitiveReadiness = useMemo(
     () =>
       calculateCognitiveReadiness({
@@ -274,7 +274,7 @@ export default function DashboardPage() {
     [],
   );
 
-  // ── Sleep debt (demo data) ─────────────────────────────────────────────
+  // -- Sleep debt (demo data) ---------------------------------------------
   const sleepDebt = useMemo(
     () =>
       calculateSleepDebt([
@@ -296,10 +296,10 @@ export default function DashboardPage() {
     [],
   );
 
-  // ── Energy forecast (demo: 7.5h slept, 3.5h debt) ─────────────────────
+  // -- Energy forecast (demo: 7.5h slept, 3.5h debt) ---------------------
   const energyForecastData = useMemo(() => generateEnergyForecast(7.5, 3.5), []);
 
-  // ── Simulated live updates every 3 seconds ───────────────────────────────
+  // -- Simulated live updates every 3 seconds -------------------------------
   useEffect(() => {
     const interval = setInterval(() => {
       setMetrics((prev) => {
@@ -335,15 +335,15 @@ export default function DashboardPage() {
 
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto space-y-6">
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div className="text-center">
         <h1 className="text-xl font-bold text-db-text">DreamBreeze</h1>
         <p className="text-xs text-db-text-dim mt-0.5">AI Sleep Comfort Control</p>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          TOP SECTION — Fan Control
-          ══════════════════════════════════════════════════════════════════════ */}
+      {/* ======================================================================
+          TOP SECTION -- Fan Control
+          ====================================================================== */}
       <section className="flex flex-col items-center gap-4">
         {/* Fan visualization */}
         <div className="relative">
@@ -409,9 +409,9 @@ export default function DashboardPage() {
         <LEDStrip level={speedLevel} />
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          MIDDLE SECTION — Live Metrics 2x2 Grid
-          ══════════════════════════════════════════════════════════════════════ */}
+      {/* ======================================================================
+          MIDDLE SECTION -- Live Metrics 2x2 Grid
+          ====================================================================== */}
       <section className="grid grid-cols-2 gap-3">
         {/* Current Posture */}
         <MetricCard icon={User} title="Posture">
@@ -495,9 +495,9 @@ export default function DashboardPage() {
         </MetricCard>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          BOTTOM SECTION — Tonight's Timeline
-          ══════════════════════════════════════════════════════════════════════ */}
+      {/* ======================================================================
+          BOTTOM SECTION -- Tonight's Timeline
+          ====================================================================== */}
       <section className="glass skeu-raised p-4 rounded-2xl">
         <div className="flex items-center gap-2 mb-3">
           <Activity size={14} className="text-db-text-muted" />
@@ -561,9 +561,9 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           AI AGENTS STATUS BADGE
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <motion.div
         className="glass skeu-raised rounded-2xl px-4 py-3 flex items-center gap-3"
         initial={{ opacity: 0, y: 12 }}
@@ -609,9 +609,9 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           WEATHER CARD
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <ThermometerSun size={14} className="text-db-text-muted" />
@@ -628,9 +628,9 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          TODAY'S READINESS — Cognitive + Sleep Debt side by side
-          ══════════════════════════════════════════════════════════════════════ */}
+      {/* ======================================================================
+          TODAY'S READINESS -- Cognitive + Sleep Debt side by side
+          ====================================================================== */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <Brain size={14} className="text-db-text-muted" />
@@ -659,9 +659,9 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           ENERGY FORECAST
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <BatteryCharging size={14} className="text-db-text-muted" />
@@ -676,9 +676,9 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           TONIGHT'S TEMPERATURE PROFILE
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <Moon size={14} className="text-db-text-muted" />

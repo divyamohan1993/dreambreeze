@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export type Posture =
   | 'supine'
@@ -42,7 +42,7 @@ export interface SleepSessionData {
   sleepScore: number;
 }
 
-// ── State Shape ────────────────────────────────────────────────────────────────
+// -- State Shape ----------------------------------------------------------------
 
 export interface SleepState {
   /* session tracking */
@@ -73,13 +73,13 @@ export interface SleepState {
   resetSession: () => void;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+// -- Store ----------------------------------------------------------------------
 
 export const useSleepStore = create<SleepState>()(
   subscribeWithSelector((set, get) => ({

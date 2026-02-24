@@ -27,9 +27,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    SHARED COMPONENTS
-   ═══════════════════════════════════════════════════════════════════════════ */
+   =========================================================================== */
 function SpinningFanBg({ opacity = 'opacity-10' }: { opacity?: string }) {
   return (
     <div className={`pointer-events-none absolute -right-32 -top-32 ${opacity}`}>
@@ -89,11 +89,11 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    SLIDES
-   ═══════════════════════════════════════════════════════════════════════════ */
+   =========================================================================== */
 
-/* SLIDE 1 — Title */
+/* SLIDE 1 -- Title */
 function SlideTitle() {
   return (
     <SlideShell>
@@ -139,7 +139,7 @@ function SlideTitle() {
   );
 }
 
-/* SLIDE 2 — Problem */
+/* SLIDE 2 -- Problem */
 function SlideProblem() {
   const stats = [
     { value: '68%', label: 'of Americans report poor sleep quality' },
@@ -197,7 +197,7 @@ function SlideProblem() {
   );
 }
 
-/* SLIDE 3 — Solution */
+/* SLIDE 3 -- Solution */
 function SlideSolution() {
   const steps = [
     { icon: Smartphone, label: 'Detects posture', color: 'text-db-teal' },
@@ -243,7 +243,7 @@ function SlideSolution() {
   );
 }
 
-/* SLIDE 4 — Magic / Demo */
+/* SLIDE 4 -- Magic / Demo */
 function SlideMagic() {
   const stages = [
     { time: '0s', posture: 'Supine', fan: '40%', stage: 'Light Sleep' },
@@ -348,7 +348,7 @@ function SlideMagic() {
   );
 }
 
-/* SLIDE 5 — Business Model */
+/* SLIDE 5 -- Business Model */
 function SlideBusinessModel() {
   const free = [
     'Basic posture detection',
@@ -418,7 +418,7 @@ function SlideBusinessModel() {
   );
 }
 
-/* SLIDE 6 — Go-to-Market */
+/* SLIDE 6 -- Go-to-Market */
 function SlideGoToMarket() {
   const phases = [
     {
@@ -437,7 +437,7 @@ function SlideGoToMarket() {
       icon: Wifi,
       phase: 'Phase 3',
       title: 'Hardware Partnerships',
-      desc: 'Atomberg, Crompton, Havells — preinstalled on smart fan apps',
+      desc: 'Atomberg, Crompton, Havells -- preinstalled on smart fan apps',
     },
     {
       icon: Shield,
@@ -480,7 +480,7 @@ function SlideGoToMarket() {
   );
 }
 
-/* SLIDE 7 — Competition */
+/* SLIDE 7 -- Competition */
 function SlideCompetition() {
   const rows = [
     {
@@ -574,7 +574,7 @@ function SlideCompetition() {
   );
 }
 
-/* SLIDE 8 — Team */
+/* SLIDE 8 -- Team */
 function SlideTeam() {
   const members = [
     { initials: 'SK', role: 'CEO / Product', desc: 'Ex-sleep tech researcher, 5 yrs ML' },
@@ -611,7 +611,7 @@ function SlideTeam() {
   );
 }
 
-/* SLIDE 9 — Projections */
+/* SLIDE 9 -- Projections */
 function SlideProjections() {
   const years = [
     { year: 'Year 1', users: '50K', conv: '5%', paid: '2,500', arr: '$150K', barH: 20 },
@@ -675,7 +675,7 @@ function SlideProjections() {
   );
 }
 
-/* SLIDE 10 — The Ask */
+/* SLIDE 10 -- The Ask */
 function SlideAsk() {
   const funds = [
     { label: 'Engineering (native apps)', pct: 40, color: 'bg-db-teal', icon: Code },
@@ -738,9 +738,9 @@ function SlideAsk() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    MAIN PITCH DECK PAGE
-   ═══════════════════════════════════════════════════════════════════════════ */
+   =========================================================================== */
 const SLIDES = [
   SlideTitle,
   SlideProblem,

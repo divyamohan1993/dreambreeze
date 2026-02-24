@@ -8,12 +8,12 @@
 import mqtt, { type MqttClient, type IClientOptions } from 'mqtt';
 import type { FanController } from './fan-controller';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface MQTTConfig {
   brokerUrl: string; // e.g. "wss://broker.example.com:8084/mqtt"
   topic: string; // e.g. "dreambreeze/fan/command"
-  statusTopic?: string; // e.g. "dreambreeze/fan/status" — subscribe for feedback
+  statusTopic?: string; // e.g. "dreambreeze/fan/status" -- subscribe for feedback
   username?: string;
   password?: string;
   clientId?: string;
@@ -32,7 +32,7 @@ export interface MQTTStatusPayload {
 
 type StatusCallback = (payload: MQTTStatusPayload) => void;
 
-// ── MQTT Fan Controller ────────────────────────────────────────────────────────
+// -- MQTT Fan Controller --------------------------------------------------------
 
 export class MQTTFanController implements FanController {
   private _config: MQTTConfig;
@@ -46,7 +46,7 @@ export class MQTTFanController implements FanController {
     this._onStatusUpdate = onStatusUpdate ?? null;
   }
 
-  // ── FanController interface ───────────────────────────────────────────────
+  // -- FanController interface -----------------------------------------------
 
   async setSpeed(speed: number): Promise<void> {
     const clamped = Math.max(0, Math.min(100, Math.round(speed)));
@@ -150,7 +150,7 @@ export class MQTTFanController implements FanController {
     return this._connected;
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _handleStatusMessage(message: Buffer): void {
     try {

@@ -1,6 +1,6 @@
 /**
  * Weather service for DreamBreeze.
- * Uses Open-Meteo free API — no API key required.
+ * Uses Open-Meteo free API -- no API key required.
  * Fetches weather based on user's geolocation (with permission).
  */
 
@@ -100,19 +100,19 @@ export function getWeatherFanRecommendation(weather: WeatherData): {
   // Temperature-based
   if (weather.feelsLike > 35) {
     adj += 20;
-    reasons.push(`Very hot (${weather.feelsLike.toFixed(0)}°C)`);
+    reasons.push(`Very hot (${weather.feelsLike.toFixed(0)} degC)`);
   } else if (weather.feelsLike > 30) {
     adj += 15;
-    reasons.push(`Hot (${weather.feelsLike.toFixed(0)}°C)`);
+    reasons.push(`Hot (${weather.feelsLike.toFixed(0)} degC)`);
   } else if (weather.feelsLike > 26) {
     adj += 8;
-    reasons.push(`Warm (${weather.feelsLike.toFixed(0)}°C)`);
+    reasons.push(`Warm (${weather.feelsLike.toFixed(0)} degC)`);
   } else if (weather.feelsLike < 18) {
     adj -= 15;
-    reasons.push(`Cool (${weather.feelsLike.toFixed(0)}°C)`);
+    reasons.push(`Cool (${weather.feelsLike.toFixed(0)} degC)`);
   } else if (weather.feelsLike < 22) {
     adj -= 5;
-    reasons.push(`Comfortable (${weather.feelsLike.toFixed(0)}°C)`);
+    reasons.push(`Comfortable (${weather.feelsLike.toFixed(0)} degC)`);
   }
 
   // Humidity-based

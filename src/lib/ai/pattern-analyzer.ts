@@ -9,7 +9,7 @@
 
 import type { Posture, SleepStage, PostureRecord, StageRecord, SleepSessionData, SleepEvent } from '@/stores/sleep-store';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface SessionRecord {
   sessionData: SleepSessionData;
@@ -43,7 +43,7 @@ export interface OptimalFanSetting {
   sampleCount: number;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 function getDominantPosture(postureHistory: PostureRecord[]): Posture {
   const counts = new Map<Posture, number>();
@@ -103,7 +103,7 @@ function categorizeTimeSlot(timestamp: number, sessionStart: number, sessionEnd:
   return 'late-night';
 }
 
-// ── Pattern Analyzer ───────────────────────────────────────────────────────────
+// -- Pattern Analyzer -----------------------------------------------------------
 
 export class PatternAnalyzer {
   /**
@@ -261,7 +261,7 @@ export class PatternAnalyzer {
   detectOptimalFanSettings(sessions: SessionRecord[]): OptimalFanSetting[] {
     if (sessions.length === 0) return [];
 
-    // Build a map of (stage, posture) → fan speed samples paired with quality
+    // Build a map of (stage, posture) -> fan speed samples paired with quality
     const combos = new Map<
       string,
       { speeds: number[]; scores: number[] }
@@ -343,7 +343,7 @@ export class PatternAnalyzer {
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 function postureLabel(posture: Posture): string {
   const labels: Record<Posture, string> = {

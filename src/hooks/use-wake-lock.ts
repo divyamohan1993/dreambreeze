@@ -48,7 +48,7 @@ export function useWakeLock(): UseWakeLockReturn {
             setIsActive(false);
           });
         } catch (err) {
-          // Silent re-acquisition failure — not critical
+          // Silent re-acquisition failure -- not critical
           setError(err instanceof Error ? err.message : 'Failed to re-acquire wake lock');
         }
       }

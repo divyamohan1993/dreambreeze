@@ -40,7 +40,7 @@ export async function createServerClient() {
         } catch {
           // The `setAll` method is called from a Server Component where
           // cookies cannot be set. This is expected when reading the session
-          // in Server Components — the middleware handles refreshing.
+          // in Server Components -- the middleware handles refreshing.
         }
       },
     },

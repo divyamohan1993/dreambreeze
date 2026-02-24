@@ -36,7 +36,7 @@ import TemperatureProfileSelector from '@/components/ui/TemperatureProfileSelect
 import WeatherCard from '@/components/ui/WeatherCard';
 import { useWeather } from '@/hooks/use-weather';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 type ConnectionType = 'demo' | 'mqtt' | 'webhook';
 type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
@@ -55,7 +55,7 @@ interface WebhookConfig {
   headers: string;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const NOISE_OPTIONS: { type: NoiseType; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { type: 'white', label: 'White', icon: Wind },
@@ -68,7 +68,7 @@ const NOISE_OPTIONS: { type: NoiseType; label: string; icon: React.ComponentType
 
 const WAKE_SOUNDS = ['Gentle Chimes', 'Sunrise', 'Birds', 'Ocean Waves', 'Soft Piano', 'None'];
 
-// ── Section wrapper ────────────────────────────────────────────────────────────
+// -- Section wrapper ------------------------------------------------------------
 
 function Section({
   title,
@@ -87,7 +87,7 @@ function Section({
   );
 }
 
-// ── Glass Input ────────────────────────────────────────────────────────────────
+// -- Glass Input ----------------------------------------------------------------
 
 function GlassInput({
   label,
@@ -118,7 +118,7 @@ function GlassInput({
   );
 }
 
-// ── Toggle ─────────────────────────────────────────────────────────────────────
+// -- Toggle ---------------------------------------------------------------------
 
 function Toggle({
   label,
@@ -163,7 +163,7 @@ function Toggle({
   );
 }
 
-// ── Slider ─────────────────────────────────────────────────────────────────────
+// -- Slider ---------------------------------------------------------------------
 
 function Slider({
   label,
@@ -224,7 +224,7 @@ function Slider({
   );
 }
 
-// ── Connection Status LED ──────────────────────────────────────────────────────
+// -- Connection Status LED ------------------------------------------------------
 
 function StatusLED({ status }: { status: ConnectionStatus }) {
   const config: Record<ConnectionStatus, { color: string; label: string }> = {
@@ -250,7 +250,7 @@ function StatusLED({ status }: { status: ConnectionStatus }) {
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
+// -- Main Component -------------------------------------------------------------
 
 export default function SettingsPage() {
   // Fan Integration
@@ -326,7 +326,7 @@ export default function SettingsPage() {
     });
   }, []);
 
-  // ── Test connection handler ──────────────────────────────────────────────
+  // -- Test connection handler ----------------------------------------------
   const testConnection = useCallback(() => {
     setTestingConnection(true);
     setConnectionStatus('connecting');
@@ -350,9 +350,9 @@ export default function SettingsPage() {
         <p className="text-xs text-db-text-dim mt-0.5">Configure your DreamBreeze experience</p>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Fan Integration
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="Fan Integration">
         {/* Connection type selector */}
         <div>
@@ -489,9 +489,9 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Temperature Profile
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="Temperature Profile">
         <p className="text-xs text-db-text-dim -mt-1 mb-2">
           Choose how DreamBreeze adjusts your fan throughout the night
@@ -502,9 +502,9 @@ export default function SettingsPage() {
         />
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Sound Preferences
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="Sound Preferences">
         {/* Default noise type */}
         <div>
@@ -589,9 +589,9 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Sleep Preferences
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="Sleep Preferences">
         <Slider
           label="Fan Sensitivity"
@@ -675,9 +675,9 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           Smart Features
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="Smart Features">
         {/* Weather Integration toggle */}
         <Toggle
@@ -731,9 +731,9 @@ export default function SettingsPage() {
         />
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           DreamBreeze AI
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="DreamBreeze AI">
         <p className="text-xs text-db-text-dim -mt-1 mb-3">
           Meet the AI agents that work together to optimize your sleep
@@ -807,9 +807,9 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ======================================================================
           About
-          ══════════════════════════════════════════════════════════════════════ */}
+          ====================================================================== */}
       <Section title="About">
         <div className="text-center space-y-3">
           <div>

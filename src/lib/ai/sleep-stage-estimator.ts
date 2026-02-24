@@ -4,13 +4,13 @@
  * Uses epoch-based scoring (30-second epochs, standard polysomnography window)
  * to estimate sleep stage from accelerometer movement intensity.
  *
- * This is a simplified actigraphy approach — not a replacement for PSG, but a
+ * This is a simplified actigraphy approach -- not a replacement for PSG, but a
  * reasonable heuristic for consumer sleep tracking.
  */
 
 import type { SleepStage } from '@/stores/sleep-store';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export interface EpochResult {
   stage: SleepStage;
@@ -25,12 +25,12 @@ interface AccelerometerDelta {
   timestamp: number;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// -- Constants ------------------------------------------------------------------
 
 const EPOCH_DURATION_MS = 30_000; // 30 seconds per epoch (standard PSG)
 const CONTEXT_BUFFER_SIZE = 10; // rolling buffer of 10 epochs for context
 
-/** Movement thresholds (in g — sum of absolute deltas per epoch) */
+/** Movement thresholds (in g -- sum of absolute deltas per epoch) */
 const THRESHOLD_AWAKE = 0.5;
 const THRESHOLD_LIGHT_UPPER = 0.5;
 const THRESHOLD_LIGHT_LOWER = 0.1;
@@ -43,7 +43,7 @@ const REM_BURST_MIN_INTERVAL_MS = 20_000;
 const REM_BURST_MAX_INTERVAL_MS = 90_000;
 const REM_BURST_THRESHOLD = 0.04; // minimum spike to count as a micro-burst
 
-// ── Estimator Class ────────────────────────────────────────────────────────────
+// -- Estimator Class ------------------------------------------------------------
 
 export class SleepStageEstimator {
   private _epochIndex = 0;
@@ -118,7 +118,7 @@ export class SleepStageEstimator {
     this._burstTimestamps = [];
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _closeEpoch(timestamp: number): EpochResult {
     // Compute total movement intensity for this epoch
@@ -164,12 +164,12 @@ export class SleepStageEstimator {
     avgMovement: number,
     hasREMBursts: boolean,
   ): { stage: SleepStage; confidence: number } {
-    // High movement → awake
+    // High movement -> awake
     if (avgMovement > THRESHOLD_AWAKE) {
       return { stage: 'awake', confidence: Math.min(1, 0.7 + (avgMovement - THRESHOLD_AWAKE)) };
     }
 
-    // Medium-high movement → light sleep
+    // Medium-high movement -> light sleep
     if (avgMovement >= THRESHOLD_LIGHT_LOWER && avgMovement <= THRESHOLD_LIGHT_UPPER) {
       // Check for REM pattern within light sleep movement range
       if (hasREMBursts && avgMovement >= THRESHOLD_REM_LOWER && avgMovement <= THRESHOLD_REM_UPPER) {
@@ -178,12 +178,12 @@ export class SleepStageEstimator {
       return { stage: 'light', confidence: 0.7 };
     }
 
-    // Very low movement → deep sleep
+    // Very low movement -> deep sleep
     if (avgMovement < THRESHOLD_DEEP_UPPER) {
       return { stage: 'deep', confidence: Math.min(1, 0.8 + (THRESHOLD_DEEP_UPPER - avgMovement) * 10) };
     }
 
-    // Low movement with bursts → REM
+    // Low movement with bursts -> REM
     if (
       avgMovement >= THRESHOLD_REM_LOWER &&
       avgMovement <= THRESHOLD_REM_UPPER &&
@@ -192,7 +192,7 @@ export class SleepStageEstimator {
       return { stage: 'rem', confidence: 0.65 };
     }
 
-    // Low movement without bursts → likely light or transitional
+    // Low movement without bursts -> likely light or transitional
     if (avgMovement >= THRESHOLD_DEEP_UPPER && avgMovement < THRESHOLD_LIGHT_LOWER) {
       return { stage: 'light', confidence: 0.5 };
     }
@@ -226,7 +226,7 @@ export class SleepStageEstimator {
    * Use context from recent epochs to smooth out unlikely transitions.
    *
    * Sleep stage transitions follow patterns:
-   * - awake → light → deep → light → REM (typical cycle)
+   * - awake -> light -> deep -> light -> REM (typical cycle)
    * - Going directly from awake to deep is unlikely
    * - REM typically occurs after a period of light/deep sleep
    */
@@ -259,7 +259,7 @@ export class SleepStageEstimator {
   }
 }
 
-// ── Singleton Export ───────────────────────────────────────────────────────────
+// -- Singleton Export -----------------------------------------------------------
 
 let _estimatorInstance: SleepStageEstimator | null = null;
 

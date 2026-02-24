@@ -1,7 +1,7 @@
 /**
  * Temperature cycling profiles for DreamBreeze.
  *
- * Research shows body temperature drops 1-2°F during sleep.
+ * Research shows body temperature drops 1-2 degF during sleep.
  * Optimal: cool at sleep onset, coldest during deep sleep,
  * warm up before waking (Harding et al., 2019).
  *
@@ -15,7 +15,7 @@ export interface TemperatureProfile {
   icon: string; // lucide icon name
   /** Fan speed (0-100) at each phase */
   phases: {
-    onset: number; // First 20min — falling asleep
+    onset: number; // First 20min -- falling asleep
     light1: number; // Light sleep, early night
     deep1: number; // First deep sleep cycle
     rem1: number; // First REM

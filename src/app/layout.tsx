@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DreamBreeze — AI Sleep Comfort System",
+  title: "DreamBreeze -- AI Sleep Comfort System",
   description:
-    "Transform your phone into an AI sleep comfort agent. Detects sleep posture, controls fan speed, generates adaptive soundscapes — all privacy-first.",
+    "Transform your phone into an AI sleep comfort agent. Detects sleep posture, controls fan speed, generates adaptive soundscapes -- all privacy-first.",
   keywords: [
     "sleep",
     "AI",

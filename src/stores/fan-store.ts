@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export type FanMode = 'auto' | 'manual' | 'off';
 export type ConnectionType = 'mqtt' | 'webhook' | 'demo';
 export type SpeedLevel = 'off' | 'breeze' | 'gentle' | 'strong' | 'turbo';
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 /**
  * Derive a human-readable speed level from the numeric speed.
@@ -20,7 +20,7 @@ function deriveSpeedLevel(speed: number): SpeedLevel {
   return 'turbo';
 }
 
-// ── State Shape ────────────────────────────────────────────────────────────────
+// -- State Shape ----------------------------------------------------------------
 
 export interface FanState {
   /* current values */
@@ -42,7 +42,7 @@ export interface FanState {
   disconnect: () => void;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+// -- Store ----------------------------------------------------------------------
 
 export const useFanStore = create<FanState>()(
   subscribeWithSelector((set) => ({

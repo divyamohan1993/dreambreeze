@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export type AppPage =
   | 'home'
@@ -12,7 +12,7 @@ export type AppPage =
   | 'fan-setup'
   | 'privacy';
 
-// ── State Shape ────────────────────────────────────────────────────────────────
+// -- State Shape ----------------------------------------------------------------
 
 export interface UIState {
   isDemoMode: boolean;
@@ -29,7 +29,7 @@ export interface UIState {
   setConsent: (show: boolean) => void;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+// -- Store ----------------------------------------------------------------------
 
 export const useUIStore = create<UIState>()(
   persist(

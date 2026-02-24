@@ -1,5 +1,5 @@
 /**
- * Thermal Agent — adjusts fan based on weather and time-of-night thermal patterns.
+ * Thermal Agent -- adjusts fan based on weather and time-of-night thermal patterns.
  *
  * Uses weather data + circadian body temperature curve to predict comfort needs.
  * Body temp drops ~1-2 degrees F during sleep, lowest at 4-5 AM.
@@ -44,22 +44,22 @@ export function runThermalAgent(): void {
     // Heat index: higher temp/humidity = more fan
     if (feelsLike > 32) {
       speed = 80;
-      reasoning = `Hot weather (feels like ${feelsLike}°C)`;
+      reasoning = `Hot weather (feels like ${feelsLike} degC)`;
     } else if (feelsLike > 28) {
       speed = 60;
-      reasoning = `Warm weather (feels like ${feelsLike}°C)`;
+      reasoning = `Warm weather (feels like ${feelsLike} degC)`;
     } else if (feelsLike > 24) {
       speed = 40;
-      reasoning = `Comfortable weather (feels like ${feelsLike}°C)`;
+      reasoning = `Comfortable weather (feels like ${feelsLike} degC)`;
     } else if (feelsLike > 20) {
       speed = 20;
-      reasoning = `Cool weather (feels like ${feelsLike}°C)`;
+      reasoning = `Cool weather (feels like ${feelsLike} degC)`;
     } else {
       speed = 5;
-      reasoning = `Cold weather (feels like ${feelsLike}°C)`;
+      reasoning = `Cold weather (feels like ${feelsLike} degC)`;
     }
 
-    // Humidity adjustment — high humidity needs more airflow for evaporative cooling
+    // Humidity adjustment -- high humidity needs more airflow for evaporative cooling
     if (humidity > 75) {
       speed = Math.min(100, speed + 10);
       reasoning += `, high humidity (${humidity}%)`;
@@ -67,13 +67,13 @@ export function runThermalAgent(): void {
 
     confidence = 0.75;
   } else {
-    reasoning = 'No weather data — using circadian estimate only';
+    reasoning = 'No weather data -- using circadian estimate only';
   }
 
   // Circadian adjustment: as body temp drops, reduce fan
   const circadianAdj = Math.round(circadianOffset * 10);
   speed = Math.max(0, Math.min(100, speed + circadianAdj));
-  reasoning += ` | Circadian offset ${circadianOffset > 0 ? '+' : ''}${circadianOffset.toFixed(1)}°C`;
+  reasoning += ` | Circadian offset ${circadianOffset > 0 ? '+' : ''}${circadianOffset.toFixed(1)} degC`;
 
   // Time-of-night classification
   const timeOfNight =

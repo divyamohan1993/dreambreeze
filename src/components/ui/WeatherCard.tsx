@@ -498,7 +498,7 @@ export default function WeatherCard({
                   <span className="text-4xl font-bold text-db-text tabular-nums tracking-tight">
                     {Math.round(weather.temperatureCelsius)}
                   </span>
-                  <span className="text-lg text-db-text-dim font-light">°C</span>
+                  <span className="text-lg text-db-text-dim font-light"> degC</span>
                 </motion.div>
 
                 <p className="text-xs text-db-text-dim mt-0.5">{weather.description}</p>
@@ -528,7 +528,7 @@ export default function WeatherCard({
           >
             <ThermometerSun size={13} style={{ color: '#f0a060' }} />
             <span className="text-xs text-db-text tabular-nums font-medium">
-              {weather.feelsLike.toFixed(0)}°
+              {weather.feelsLike.toFixed(0)} deg
             </span>
             <span className="text-[9px] text-db-text-muted uppercase tracking-wider">
               Feels like

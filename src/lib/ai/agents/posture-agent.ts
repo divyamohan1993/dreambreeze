@@ -1,5 +1,5 @@
 /**
- * Posture Agent — adjusts fan speed based on body position.
+ * Posture Agent -- adjusts fan speed based on body position.
  *
  * Different postures expose different body surface areas to airflow.
  * Supine (back) = max exposure, prone (face down) = minimal, lateral = moderate.
@@ -7,11 +7,11 @@
 import { blackboard, type Hypothesis } from '../blackboard';
 
 const POSTURE_FAN_MAP: Record<string, number> = {
-  supine: 55, // Back — full torso exposed, moderate-high airflow
-  'left-lateral': 40, // Side — partial exposure
+  supine: 55, // Back -- full torso exposed, moderate-high airflow
+  'left-lateral': 40, // Side -- partial exposure
   'right-lateral': 40,
-  prone: 25, // Face down — minimal, avoid face draft
-  fetal: 30, // Curled up — likely cold, reduce airflow
+  prone: 25, // Face down -- minimal, avoid face draft
+  fetal: 30, // Curled up -- likely cold, reduce airflow
   unknown: 35, // Default conservative
 };
 
@@ -33,7 +33,7 @@ export function runPostureAgent(): void {
     timestamp: Date.now(),
     confidence: ctx.currentPosture === 'unknown' ? 0.3 : 0.85,
     action: { type: 'SET_FAN_SPEED', speed },
-    reasoning: `Posture "${ctx.currentPosture}" + stage "${ctx.currentSleepStage}" → base ${baseSpeed} + mod ${stageMod} = ${speed}%`,
+    reasoning: `Posture "${ctx.currentPosture}" + stage "${ctx.currentSleepStage}" -> base ${baseSpeed} + mod ${stageMod} = ${speed}%`,
     priority: 'high',
     expiresAt: Date.now() + 60_000, // 60s TTL
   };

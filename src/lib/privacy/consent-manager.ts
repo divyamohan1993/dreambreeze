@@ -9,7 +9,7 @@
  * Also supports GDPR (EU) and CCPA (California) patterns.
  */
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export enum ConsentPurpose {
   SENSOR_COLLECTION = 'sensor_collection',
@@ -34,7 +34,7 @@ export interface ConsentLogEntry {
   policyVersion: string;
 }
 
-/** Human-readable description of each purpose — presented to the user. */
+/** Human-readable description of each purpose -- presented to the user. */
 export const CONSENT_DESCRIPTIONS: Record<ConsentPurpose, { title: string; description: string }> = {
   [ConsentPurpose.SENSOR_COLLECTION]: {
     title: 'Motion Sensor Access',
@@ -59,7 +59,7 @@ export const CONSENT_DESCRIPTIONS: Record<ConsentPurpose, { title: string; descr
   [ConsentPurpose.ANALYTICS]: {
     title: 'Usage Analytics',
     description:
-      'Anonymous usage analytics help us improve the app. No personal sleep data is included — only feature usage and error reports.',
+      'Anonymous usage analytics help us improve the app. No personal sleep data is included -- only feature usage and error reports.',
   },
 };
 
@@ -67,7 +67,7 @@ const STORAGE_KEY = 'dreambreeze-consent';
 const LOG_KEY = 'dreambreeze-consent-log';
 const POLICY_VERSION = '1.0.0';
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 function generateId(): string {
   return `consent-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -105,7 +105,7 @@ function appendLogEntry(entry: ConsentLogEntry): void {
   localStorage.setItem(LOG_KEY, JSON.stringify(log));
 }
 
-// ── Consent Manager Class ──────────────────────────────────────────────────────
+// -- Consent Manager Class ------------------------------------------------------
 
 export class ConsentManager {
   /**
@@ -235,7 +235,7 @@ export class ConsentManager {
     setStoredConsents({});
   }
 
-  // ── Private ───────────────────────────────────────────────────────────────
+  // -- Private ---------------------------------------------------------------
 
   private _cleanupForPurpose(purpose: ConsentPurpose): void {
     switch (purpose) {
@@ -254,7 +254,7 @@ export class ConsentManager {
   }
 }
 
-// ── Singleton ──────────────────────────────────────────────────────────────────
+// -- Singleton ------------------------------------------------------------------
 
 let _instance: ConsentManager | null = null;
 

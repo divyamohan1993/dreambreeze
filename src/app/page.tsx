@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { motion, useInView, animate } from 'motion/react';
 
-/* ───────────────────────── Animated counter hook ───────────────────────── */
+/* ------------------------- Animated counter hook ------------------------- */
 function AnimatedCounter({
   target,
   suffix = '',
@@ -55,7 +55,7 @@ function AnimatedCounter({
   );
 }
 
-/* ───────────────────────── Floating particles (CSS-driven) ────────────── */
+/* ------------------------- Floating particles (CSS-driven) -------------- */
 function Particles() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -89,7 +89,7 @@ function Particles() {
   );
 }
 
-/* ───────────────────────── Spinning fan (CSS-only) ────────────────────── */
+/* ------------------------- Spinning fan (CSS-only) ---------------------- */
 function SpinningFan({ size = 400, className = '' }: { size?: number; className?: string }) {
   return (
     <div className={`relative ${className}`} style={{ width: size, height: size }}>
@@ -151,7 +151,7 @@ function SpinningFan({ size = 400, className = '' }: { size?: number; className?
   );
 }
 
-/* ───────────────────────── Section wrapper ─────────────────────────────── */
+/* ------------------------- Section wrapper ------------------------------- */
 function Section({
   children,
   className = '',
@@ -168,7 +168,7 @@ function Section({
   );
 }
 
-/* ───────────────────────── Feature card ────────────────────────────────── */
+/* ------------------------- Feature card ---------------------------------- */
 function FeatureCard({
   icon: Icon,
   title,
@@ -203,7 +203,7 @@ function FeatureCard({
   );
 }
 
-/* ───────────────────────── Step card ──────────────────────────────────── */
+/* ------------------------- Step card ------------------------------------ */
 function StepCard({
   icon: Icon,
   number,
@@ -243,13 +243,13 @@ function StepCard({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    LANDING PAGE
-   ═══════════════════════════════════════════════════════════════════════════ */
+   =========================================================================== */
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-db-navy texture-fabric">
-      {/* ─── NAV ─── */}
+      {/* --- NAV --- */}
       <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-db-navy/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 text-db-text">
@@ -279,7 +279,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ─── HERO ─── */}
+      {/* --- HERO --- */}
       <Section className="relative flex min-h-screen items-center overflow-hidden pt-32">
         <Particles />
         {/* Background fan */}
@@ -351,7 +351,7 @@ export default function LandingPage() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-db-navy to-transparent" />
       </Section>
 
-      {/* ─── HOW IT WORKS ─── */}
+      {/* --- HOW IT WORKS --- */}
       <Section id="how-it-works">
         <div className="mb-16 text-center">
           <motion.p
@@ -403,7 +403,7 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* ─── FEATURES ─── */}
+      {/* --- FEATURES --- */}
       <Section id="features" className="bg-db-surface/30">
         <div className="mb-16 text-center">
           <motion.p
@@ -465,7 +465,7 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* ─── PRIVACY PROMISE ─── */}
+      {/* --- PRIVACY PROMISE --- */}
       <Section id="privacy">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -519,7 +519,7 @@ export default function LandingPage() {
         </motion.div>
       </Section>
 
-      {/* ─── SOCIAL PROOF / STATS ─── */}
+      {/* --- SOCIAL PROOF / STATS --- */}
       <Section className="bg-db-surface/30">
         <div className="mb-16 text-center">
           <motion.p
@@ -583,7 +583,7 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* ─── CTA ─── */}
+      {/* --- CTA --- */}
       <Section>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -624,7 +624,7 @@ export default function LandingPage() {
         </motion.div>
       </Section>
 
-      {/* ─── FOOTER ─── */}
+      {/* --- FOOTER --- */}
       <footer className="border-t border-white/5 bg-db-navy px-6 py-16">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-10 md:grid-cols-4">

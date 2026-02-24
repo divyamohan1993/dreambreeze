@@ -5,7 +5,7 @@
  * and provides structured policy text for each jurisdiction.
  */
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export type RegulationId = 'DPDP' | 'GDPR' | 'CCPA';
 
@@ -34,7 +34,7 @@ export interface StructuredPrivacyPolicy {
   };
 }
 
-// ── Regulation Definitions ─────────────────────────────────────────────────────
+// -- Regulation Definitions -----------------------------------------------------
 
 const REGULATIONS: Record<RegulationId, Regulation> = {
   DPDP: {
@@ -97,7 +97,7 @@ const REGULATIONS: Record<RegulationId, Regulation> = {
   },
 };
 
-// ── Timezone → Regulation Mapping ──────────────────────────────────────────────
+// -- Timezone -> Regulation Mapping ----------------------------------------------
 
 const INDIA_TIMEZONE = 'Asia/Kolkata';
 const INDIA_LOCALES = ['hi', 'hi-IN', 'en-IN', 'bn-IN', 'ta-IN', 'te-IN', 'mr-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'pa-IN'];
@@ -115,7 +115,7 @@ const EU_TIMEZONES = [
 
 const CALIFORNIA_TIMEZONE = 'America/Los_Angeles';
 
-// ── Public Functions ───────────────────────────────────────────────────────────
+// -- Public Functions -----------------------------------------------------------
 
 /**
  * Detect applicable privacy regulations based on user's locale and timezone.

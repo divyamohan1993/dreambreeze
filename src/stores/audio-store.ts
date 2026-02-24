@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 
 export type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
 
@@ -13,7 +13,7 @@ export interface AudioMix {
   masterVolume: number; // 0-1
 }
 
-// ── State Shape ────────────────────────────────────────────────────────────────
+// -- State Shape ----------------------------------------------------------------
 
 export interface AudioState {
   isPlaying: boolean;
@@ -31,7 +31,7 @@ export interface AudioState {
   updateMix: (mix: Partial<AudioMix>) => void;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+// -- Store ----------------------------------------------------------------------
 
 const defaultMix: AudioMix = {
   primary: 'white',

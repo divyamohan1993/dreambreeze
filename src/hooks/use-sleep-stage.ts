@@ -41,7 +41,7 @@ export function useSleepStage(): UseSleepStageReturn {
           Date.now(),
         );
 
-        // Epoch completed — update store
+        // Epoch completed -- update store
         if (result) {
           lastEpochRef.current = result;
           updateSleepStage(result.stage, result.confidence, result.epochIndex);

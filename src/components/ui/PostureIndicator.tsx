@@ -19,7 +19,7 @@ const POSTURE_LABELS: Record<Posture, string> = {
   unknown: 'Detecting...',
 };
 
-// SVG path data for each posture silhouette — human figure
+// SVG path data for each posture silhouette -- human figure
 // All paths are designed in a 120x200 viewBox
 const POSTURE_PATHS: Record<Posture, string> = {
   supine: `

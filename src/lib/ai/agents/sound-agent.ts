@@ -1,5 +1,5 @@
 /**
- * Sound Agent — adapts soundscape to sleep stage and context.
+ * Sound Agent -- adapts soundscape to sleep stage and context.
  *
  * Research-backed: pink noise boosts deep sleep (Ngo et al., 2013),
  * brown noise masks low-frequency disturbances,
@@ -27,27 +27,27 @@ function getSoundForStage(
           context.stressLevel && context.stressLevel > 3 ? 'brown' : 'white',
         volume: 0.4,
         reasoning:
-          'Sleep onset — white noise for consistent masking, brown if stressed',
+          'Sleep onset -- white noise for consistent masking, brown if stressed',
       };
     case 'light':
       return {
         noiseType: 'pink',
         volume: 0.35,
-        reasoning: 'Light sleep — pink noise to encourage transition to deep',
+        reasoning: 'Light sleep -- pink noise to encourage transition to deep',
       };
     case 'deep':
       return {
         noiseType: 'pink',
         volume: 0.25,
         reasoning:
-          'Deep sleep — low-volume pink noise for slow-wave enhancement',
+          'Deep sleep -- low-volume pink noise for slow-wave enhancement',
       };
     case 'rem':
       return {
         noiseType: 'brown',
         volume: 0.3,
         reasoning:
-          'REM sleep — brown noise masks external sounds without disruption',
+          'REM sleep -- brown noise masks external sounds without disruption',
       };
     default:
       return { noiseType: 'white', volume: 0.3, reasoning: 'Default' };
@@ -76,7 +76,7 @@ export function runSoundAgent(): void {
     ctx.currentSleepStage === 'awake'
   ) {
     rec.volume = Math.min(0.6, rec.volume + 0.1);
-    rec.reasoning += ` | Caffeine (${ctx.preSleepContext.caffeineMg}mg) — increased masking`;
+    rec.reasoning += ` | Caffeine (${ctx.preSleepContext.caffeineMg}mg) -- increased masking`;
   }
 
   const hypothesis: Hypothesis = {

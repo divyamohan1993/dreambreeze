@@ -49,7 +49,7 @@ export default function FanVisualization({
       ctx.clearRect(0, 0, w, h);
       ctx.save();
 
-      // ── Outer decorative ring ──
+      // -- Outer decorative ring --
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, radius * 1.0, 0, Math.PI * 2);
@@ -74,7 +74,7 @@ export default function FanVisualization({
       }
       ctx.restore();
 
-      // ── Draw fan blades with motion blur ──
+      // -- Draw fan blades with motion blur --
       const ghostFrames = currentSpeedRef.current > 30 ? 3 : currentSpeedRef.current > 10 ? 1 : 0;
       const bladeCount = 5;
       const bladeLength = radius * 0.72;
@@ -161,7 +161,7 @@ export default function FanVisualization({
         ctx.restore();
       }
 
-      // ── Central hub - brushed aluminum ──
+      // -- Central hub - brushed aluminum --
       const hubRadius = radius * 0.16;
 
       // Hub shadow

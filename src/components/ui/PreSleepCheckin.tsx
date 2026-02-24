@@ -20,7 +20,7 @@ import {
   Timer,
 } from 'lucide-react';
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// -- Types --------------------------------------------------------------------
 
 export interface PreSleepData {
   stressLevel: number; // 1-5
@@ -38,7 +38,7 @@ interface Props {
   onSkip: () => void;
 }
 
-// ── Stress Face SVG Icons ────────────────────────────────────────────────────
+// -- Stress Face SVG Icons ----------------------------------------------------
 // Custom styled faces instead of emoji to maintain skeuomorphic aesthetic
 
 function StressFace({ level, isActive }: { level: number; isActive: boolean }) {
@@ -174,7 +174,7 @@ function StressFace({ level, isActive }: { level: number; isActive: boolean }) {
   );
 }
 
-// ── Selectable Chip Component ────────────────────────────────────────────────
+// -- Selectable Chip Component ------------------------------------------------
 
 interface ChipProps {
   label: string;
@@ -228,7 +228,7 @@ function Chip({ label, isActive, onClick, icon, accentColor = '#4ecdc4' }: ChipP
   );
 }
 
-// ── Section Header ───────────────────────────────────────────────────────────
+// -- Section Header -----------------------------------------------------------
 
 function SectionLabel({ icon: Icon, label }: { icon: typeof Coffee; label: string }) {
   return (
@@ -241,7 +241,7 @@ function SectionLabel({ icon: Icon, label }: { icon: typeof Coffee; label: strin
   );
 }
 
-// ── Progress Dots ────────────────────────────────────────────────────────────
+// -- Progress Dots ------------------------------------------------------------
 
 function ProgressDots({ current, total }: { current: number; total: number }) {
   return (
@@ -265,7 +265,7 @@ function ProgressDots({ current, total }: { current: number; total: number }) {
   );
 }
 
-// ── Insight Card ─────────────────────────────────────────────────────────────
+// -- Insight Card -------------------------------------------------------------
 
 function InsightCard({
   icon: Icon,
@@ -304,7 +304,7 @@ function InsightCard({
   );
 }
 
-// ── Main Component ───────────────────────────────────────────────────────────
+// -- Main Component -----------------------------------------------------------
 
 export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
   const [step, setStep] = useState(0);
@@ -322,7 +322,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
 
   const totalSteps = 4; // Feeling, Intake, Activity, Summary
 
-  // ── Navigation ─────────────────────────────────────────────────────────────
+  // -- Navigation -------------------------------------------------------------
 
   const goNext = useCallback(() => {
     if (step < totalSteps - 1) {
@@ -338,7 +338,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
     }
   }, [step]);
 
-  // ── Insight Generation ─────────────────────────────────────────────────────
+  // -- Insight Generation -----------------------------------------------------
 
   const generateInsights = useCallback(
     (d: PreSleepData): { text: string; icon: typeof Wind; color: string }[] => {
@@ -416,11 +416,11 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
 
   const insights = useMemo(() => generateInsights(data), [data, generateInsights]);
 
-  // ── Step Labels ────────────────────────────────────────────────────────────
+  // -- Step Labels ------------------------------------------------------------
 
   const stepTitles = ['How are you feeling?', "Today's intake", 'Activity', 'Your sleep plan'];
 
-  // ── Step transition variants ───────────────────────────────────────────────
+  // -- Step transition variants -----------------------------------------------
 
   const slideVariants = {
     enter: (dir: number) => ({
@@ -437,11 +437,11 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
     }),
   };
 
-  // ── Render Steps ───────────────────────────────────────────────────────────
+  // -- Render Steps -----------------------------------------------------------
 
   const renderStep = () => {
     switch (step) {
-      // ── Step 0: Stress Level ───────────────────────────────────────────────
+      // -- Step 0: Stress Level -----------------------------------------------
       case 0:
         return (
           <div className="flex flex-col items-center gap-8">
@@ -465,7 +465,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
           </div>
         );
 
-      // ── Step 1: Intake ─────────────────────────────────────────────────────
+      // -- Step 1: Intake -----------------------------------------------------
       case 1:
         return (
           <div className="flex flex-col gap-6 w-full">
@@ -556,7 +556,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
           </div>
         );
 
-      // ── Step 2: Activity ───────────────────────────────────────────────────
+      // -- Step 2: Activity ---------------------------------------------------
       case 2:
         return (
           <div className="flex flex-col gap-6 w-full">
@@ -651,7 +651,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
           </div>
         );
 
-      // ── Step 3: Summary ────────────────────────────────────────────────────
+      // -- Step 3: Summary ----------------------------------------------------
       case 3:
         return (
           <div className="flex flex-col gap-5 w-full">
@@ -755,7 +755,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
     }
   };
 
-  // ── Main Render ────────────────────────────────────────────────────────────
+  // -- Main Render ------------------------------------------------------------
 
   return (
     <motion.div
