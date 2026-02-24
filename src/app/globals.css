@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@source not "../app/favicon.ico";
+@source not "../../public/**/*.{svg,png,ico,json}";
+@source not "../../supabase/**";
+@source not "../../docs/**";
+@source not "../../*.{md,json,png,jpeg}";
 
 :root {
   --db-navy: #0a0e27;
