@@ -1,0 +1,24 @@
+name: Initialize Wiki
+on:
+  workflow_dispatch:
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Init Wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "# DreamBreeze Wiki" > Home.md
+          echo "" >> Home.md
+          echo "Initializing wiki..." >> Home.md
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Home.md
+          git commit -m "Initialize wiki"
+          git branch -M master
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/divyamohan1993/dreambreeze.wiki.git"
+          git push -u origin master
