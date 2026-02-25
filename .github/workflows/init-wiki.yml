@@ -1,0 +1,21 @@
+name: Initialize Wiki
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup wiki content
+        run: |
+          mkdir wiki
+          echo "# DreamBreeze Wiki" > wiki/Home.md
+          echo "" >> wiki/Home.md
+          echo "Wiki initialized. Content will be added shortly." >> wiki/Home.md
+      
+      - name: Push to wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        with:
+          path: wiki
+          token: ${{ secrets.GITHUB_TOKEN }}
