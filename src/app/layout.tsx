@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConsentBanner from "@/components/ui/ConsentBanner";
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,12 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DreamBreeze -- AI Sleep Comfort System",
+  title: "DreamBreeze -- Science-Based Sleep Comfort System",
   description:
-    "Transform your phone into an AI sleep comfort agent. Detects sleep posture, controls fan speed, generates adaptive soundscapes -- all privacy-first.",
+    "Science-based sleep tracking with posture-aware fan control and adaptive soundscapes. All processing on-device.",
   keywords: [
     "sleep",
-    "AI",
+    "science-based",
     "fan control",
     "posture detection",
     "white noise",
@@ -60,6 +61,7 @@ export default function RootLayout({
         <LoadingScreen />
         {children}
         <ConsentBanner />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
