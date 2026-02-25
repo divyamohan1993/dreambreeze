@@ -12,10 +12,11 @@ jobs:
           mkdir wiki
           echo "# DreamBreeze Wiki" > wiki/Home.md
           echo "" >> wiki/Home.md
-          echo "Wiki initialized. Content will be added shortly." >> wiki/Home.md
+          echo "Wiki initialized. Content coming shortly." >> wiki/Home.md
       
       - name: Push to wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
           path: wiki
           token: ${{ secrets.GITHUB_TOKEN }}
+          strategy: init
