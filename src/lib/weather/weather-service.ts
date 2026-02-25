@@ -27,6 +27,53 @@ export interface WeatherData {
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 let _cache: { data: WeatherData; timestamp: number } | null = null;
 
+interface Coordinates {
+  lat: number;
+  lon: number;
+}
+
+let cachedCoords: { coords: Coordinates; fetchedAt: number } | null = null;
+const COORDS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+export async function getCoordinates(): Promise<Coordinates | null> {
+  if (cachedCoords && Date.now() - cachedCoords.fetchedAt < COORDS_CACHE_TTL) {
+    return cachedCoords.coords;
+  }
+
+  // Try GPS first
+  if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 10000,
+          maximumAge: COORDS_CACHE_TTL,
+          enableHighAccuracy: false,
+        });
+      });
+      const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+      cachedCoords = { coords, fetchedAt: Date.now() };
+      return coords;
+    } catch {
+      // GPS denied or timed out, fall through to IP
+    }
+  }
+
+  // IP-based fallback
+  try {
+    const resp = await fetch('https://ipapi.co/json/');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.latitude && data.longitude) {
+        const coords = { lat: data.latitude, lon: data.longitude };
+        cachedCoords = { coords, fetchedAt: Date.now() };
+        return coords;
+      }
+    }
+  } catch { /* ignore */ }
+
+  return cachedCoords?.coords ?? null;
+}
+
 function getWeatherDescription(code: number): string {
   // WMO Weather interpretation codes
   const descriptions: Record<number, string> = {
@@ -62,18 +109,13 @@ export async function getWeather(): Promise<WeatherData | null> {
   }
 
   try {
-    // Get user's location
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        timeout: 10000,
-        maximumAge: 600000, // 10min cache
-      });
-    });
-
-    const { latitude, longitude } = position.coords;
+    // Get user's location (GPS-first with IP fallback)
+    const coords = await getCoordinates();
+    if (!coords) return null;
+    const { lat, lon } = coords;
 
     // Fetch from Open-Meteo (free, no API key)
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&timezone=auto`;
 
     const json = await weatherCircuit.execute(async () => {
       const controller = new AbortController();
@@ -153,4 +195,5 @@ export function getWeatherFanRecommendation(weather: WeatherData): {
 
 export function clearWeatherCache(): void {
   _cache = null;
+  cachedCoords = null;
 }
