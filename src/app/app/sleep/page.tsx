@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Moon, Wind, Volume2, StopCircle, Loader2, Cloud, Thermometer, Zap } from 'lucide-react';
 import PreSleepCheckin, { type PreSleepData } from '@/components/ui/PreSleepCheckin';
+import PermissionGate from '@/components/ui/PermissionGate';
+import { getPermissionManager } from '@/lib/sensors/permission-manager';
 import { useBlackboard } from '@/hooks/use-blackboard';
 import { useWeather } from '@/hooks/use-weather';
 import type { Posture, SleepStage, NoiseType } from '@/types/sleep';
@@ -12,7 +14,7 @@ import { saveSession, type StoredSession } from '@/lib/storage/session-storage';
 
 // -- Types ----------------------------------------------------------------------
 
-type SessionPhase = 'pre-sleep' | 'idle' | 'calibrating' | 'active';
+type SessionPhase = 'pre-sleep' | 'permissions' | 'idle' | 'calibrating' | 'active';
 
 // -- Constants ------------------------------------------------------------------
 
@@ -197,14 +199,19 @@ export default function SleepPage() {
         screenTimeMinutes: data.screenTimeMinutes,
         mealHoursAgo: data.mealHoursAgo,
       });
-      setPhase('idle');
+      const pm = getPermissionManager();
+      setPhase(pm.hasAllRequired() ? 'idle' : 'permissions');
     },
     [setPreSleepContext]
   );
 
   const handlePreSleepSkip = useCallback(() => {
-    setPhase('idle');
+    const pm = getPermissionManager();
+    setPhase(pm.hasAllRequired() ? 'idle' : 'permissions');
   }, []);
+
+  const handlePermissionsComplete = useCallback(() => setPhase('idle'), []);
+  const handlePermissionsSkip = useCallback(() => setPhase('idle'), []);
 
   // -- Start session --------------------------------------------------------
   const startSession = useCallback(() => {
@@ -352,6 +359,15 @@ export default function SleepPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] px-4 py-8">
         <PreSleepCheckin onComplete={handlePreSleepComplete} onSkip={handlePreSleepSkip} />
+      </div>
+    );
+  }
+
+  // -- Permissions phase ------------------------------------------------------
+  if (phase === 'permissions') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] px-4 py-8">
+        <PermissionGate onComplete={handlePermissionsComplete} onSkip={handlePermissionsSkip} />
       </div>
     );
   }
