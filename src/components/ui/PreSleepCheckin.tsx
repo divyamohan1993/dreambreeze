@@ -16,292 +16,25 @@ import {
   Wind,
   Volume2,
   ThermometerSun,
-  Brain,
   Timer,
 } from 'lucide-react';
 
-// -- Types --------------------------------------------------------------------
+import { StressFace } from './checkin/StressFace';
+import { Chip } from './checkin/Chip';
+import { ProgressDots } from './checkin/ProgressDots';
+import { InsightCard } from './checkin/InsightCard';
+import { SectionLabel } from './checkin/SectionLabel';
+import { generateInsights } from './checkin/generate-insights';
+import type { PreSleepData } from './checkin/types';
 
-export interface PreSleepData {
-  stressLevel: number; // 1-5
-  caffeineMg: number;
-  caffeineLastIntakeHoursAgo: number;
-  alcoholDrinks: number;
-  exerciseIntensity: 'none' | 'light' | 'moderate' | 'intense';
-  exerciseHoursAgo: number;
-  mealHoursAgo: number;
-  screenTimeMinutes: number;
-}
+// Re-export so existing consumers don't break.
+export type { PreSleepData } from './checkin/types';
+
+// -- Props --------------------------------------------------------------------
 
 interface Props {
   onComplete: (data: PreSleepData) => void;
   onSkip: () => void;
-}
-
-// -- Stress Face SVG Icons ----------------------------------------------------
-// Custom styled faces instead of emoji to maintain skeuomorphic aesthetic
-
-function StressFace({ level, isActive }: { level: number; isActive: boolean }) {
-  const activeColor = isActive ? '#4ecdc4' : '#555577';
-  const bgOpacity = isActive ? 0.15 : 0.04;
-  const glowShadow = isActive
-    ? '0 0 16px rgba(78, 205, 196, 0.3), 0 0 4px rgba(78, 205, 196, 0.2)'
-    : 'none';
-
-  // Different mouth paths for each stress level
-  const getMouthPath = () => {
-    switch (level) {
-      case 1: // Very calm - big smile
-        return 'M9 14 Q12 18 15 14';
-      case 2: // Relaxed - gentle smile
-        return 'M9.5 14.5 Q12 16.5 14.5 14.5';
-      case 3: // Neutral - straight line
-        return 'M9.5 15 L14.5 15';
-      case 4: // Tense - slight frown
-        return 'M9.5 16 Q12 14 14.5 16';
-      case 5: // Stressed - wavy frown
-        return 'M9 16.5 Q10.5 14.5 12 16 Q13.5 14.5 15 16.5';
-      default:
-        return 'M9.5 15 L14.5 15';
-    }
-  };
-
-  // Different eye shapes for stress levels
-  const getEyes = () => {
-    switch (level) {
-      case 1: // Calm - happy closed eyes
-        return (
-          <>
-            <path d="M8 11 Q9 9.5 10 11" stroke={activeColor} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-            <path d="M14 11 Q15 9.5 16 11" stroke={activeColor} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          </>
-        );
-      case 2: // Relaxed - soft eyes
-        return (
-          <>
-            <circle cx="9.5" cy="10.5" r="1" fill={activeColor} />
-            <circle cx="14.5" cy="10.5" r="1" fill={activeColor} />
-          </>
-        );
-      case 3: // Neutral
-        return (
-          <>
-            <circle cx="9.5" cy="10.5" r="1.2" fill={activeColor} />
-            <circle cx="14.5" cy="10.5" r="1.2" fill={activeColor} />
-          </>
-        );
-      case 4: // Tense - slightly wide eyes
-        return (
-          <>
-            <circle cx="9.5" cy="10.5" r="1.4" fill={activeColor} />
-            <circle cx="14.5" cy="10.5" r="1.4" fill={activeColor} />
-            {/* Eyebrows angled */}
-            <path d="M8 8.5 L11 8" stroke={activeColor} strokeWidth="1" strokeLinecap="round" fill="none" />
-            <path d="M16 8.5 L13 8" stroke={activeColor} strokeWidth="1" strokeLinecap="round" fill="none" />
-          </>
-        );
-      case 5: // Stressed - wide eyes, raised eyebrows
-        return (
-          <>
-            <circle cx="9.5" cy="10.5" r="1.6" fill={activeColor} />
-            <circle cx="14.5" cy="10.5" r="1.6" fill={activeColor} />
-            {/* Droplet for sweat */}
-            <path d="M17 8 Q17.5 9.5 17 10 Q16.5 9.5 17 8Z" fill={activeColor} opacity={0.6} />
-            {/* Worried eyebrows */}
-            <path d="M7.5 8 L10.5 7.5" stroke={activeColor} strokeWidth="1" strokeLinecap="round" fill="none" />
-            <path d="M16.5 8 L13.5 7.5" stroke={activeColor} strokeWidth="1" strokeLinecap="round" fill="none" />
-          </>
-        );
-      default:
-        return (
-          <>
-            <circle cx="9.5" cy="10.5" r="1.2" fill={activeColor} />
-            <circle cx="14.5" cy="10.5" r="1.2" fill={activeColor} />
-          </>
-        );
-    }
-  };
-
-  const stressLabels = ['', 'Calm', 'Relaxed', 'Neutral', 'Tense', 'Stressed'];
-
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <motion.div
-        className="relative flex items-center justify-center rounded-2xl"
-        style={{
-          width: 56,
-          height: 56,
-          background: `rgba(78, 205, 196, ${bgOpacity})`,
-          border: `1.5px solid ${isActive ? 'rgba(78, 205, 196, 0.35)' : 'rgba(255, 255, 255, 0.06)'}`,
-          boxShadow: isActive
-            ? `${glowShadow}, inset 0 1px 0 rgba(255, 255, 255, 0.08)`
-            : 'inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 2px 4px rgba(0, 0, 0, 0.2)',
-        }}
-        whileHover={{ scale: 1.08, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-      >
-        <svg viewBox="0 0 24 24" width={32} height={32}>
-          {/* Face outline */}
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            fill="none"
-            stroke={activeColor}
-            strokeWidth="1.2"
-            opacity={0.4}
-          />
-          {/* Eyes */}
-          {getEyes()}
-          {/* Mouth */}
-          <path
-            d={getMouthPath()}
-            stroke={activeColor}
-            strokeWidth="1.3"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
-      </motion.div>
-      <span
-        className="text-[10px] font-medium transition-colors duration-200"
-        style={{ color: isActive ? '#4ecdc4' : '#555577' }}
-      >
-        {stressLabels[level]}
-      </span>
-    </div>
-  );
-}
-
-// -- Selectable Chip Component ------------------------------------------------
-
-interface ChipProps {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-  icon?: React.ReactNode;
-  accentColor?: string;
-}
-
-function Chip({ label, isActive, onClick, icon, accentColor = '#4ecdc4' }: ChipProps) {
-  const glowRgba = accentColor === '#4ecdc4'
-    ? 'rgba(78, 205, 196, VAR)'
-    : accentColor === '#6e5ea8'
-      ? 'rgba(110, 94, 168, VAR)'
-      : accentColor === '#f0a060'
-        ? 'rgba(240, 160, 96, VAR)'
-        : 'rgba(78, 205, 196, VAR)';
-
-  return (
-    <motion.button
-      onClick={onClick}
-      className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium overflow-hidden"
-      style={{
-        background: isActive
-          ? `${accentColor}18`
-          : 'rgba(255, 255, 255, 0.04)',
-        border: `1.5px solid ${isActive ? `${accentColor}50` : 'rgba(255, 255, 255, 0.06)'}`,
-        color: isActive ? accentColor : '#8888aa',
-        boxShadow: isActive
-          ? `0 0 16px ${glowRgba.replace('VAR', '0.15')}, 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)`
-          : '0 2px 4px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-      }}
-      whileHover={{ scale: 1.03, y: -1 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-    >
-      {/* Selected indicator glow */}
-      {isActive && (
-        <motion.div
-          className="absolute inset-0 rounded-xl pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          style={{
-            background: `radial-gradient(ellipse at 50% 0%, ${accentColor}15 0%, transparent 70%)`,
-          }}
-        />
-      )}
-      {icon && <span className="relative z-10">{icon}</span>}
-      <span className="relative z-10">{label}</span>
-    </motion.button>
-  );
-}
-
-// -- Section Header -----------------------------------------------------------
-
-function SectionLabel({ icon: Icon, label }: { icon: typeof Coffee; label: string }) {
-  return (
-    <div className="flex items-center gap-2 mb-3">
-      <Icon size={14} className="text-db-text-muted" />
-      <span className="text-xs font-medium text-db-text-dim uppercase tracking-wider">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// -- Progress Dots ------------------------------------------------------------
-
-function ProgressDots({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      {Array.from({ length: total }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="rounded-full"
-          animate={{
-            width: i === current ? 24 : 8,
-            height: 8,
-            backgroundColor: i === current ? '#4ecdc4' : i < current ? 'rgba(78, 205, 196, 0.4)' : 'rgba(255, 255, 255, 0.08)',
-          }}
-          style={{
-            boxShadow: i === current ? '0 0 8px rgba(78, 205, 196, 0.4)' : 'none',
-          }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// -- Insight Card -------------------------------------------------------------
-
-function InsightCard({
-  icon: Icon,
-  text,
-  color,
-  index,
-}: {
-  icon: typeof Wind;
-  text: string;
-  color: string;
-  index: number;
-}) {
-  return (
-    <motion.div
-      className="flex gap-3 p-3.5 rounded-xl"
-      style={{
-        background: `${color}08`,
-        border: `1px solid ${color}20`,
-        boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.04)`,
-      }}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.15 + index * 0.12, duration: 0.5, ease: 'easeOut' }}
-    >
-      <div
-        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-0.5"
-        style={{
-          background: `${color}15`,
-          boxShadow: `0 0 8px ${color}15`,
-        }}
-      >
-        <Icon size={16} style={{ color }} />
-      </div>
-      <p className="text-sm text-db-text-dim leading-relaxed">{text}</p>
-    </motion.div>
-  );
 }
 
 // -- Main Component -----------------------------------------------------------
@@ -338,83 +71,9 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
     }
   }, [step]);
 
-  // -- Insight Generation -----------------------------------------------------
+  // -- Insights ---------------------------------------------------------------
 
-  const generateInsights = useCallback(
-    (d: PreSleepData): { text: string; icon: typeof Wind; color: string }[] => {
-      const insights: { text: string; icon: typeof Wind; color: string }[] = [];
-
-      // Caffeine half-life is ~5-6 hours
-      const effectiveCaffeine =
-        d.caffeineMg * Math.pow(0.5, d.caffeineLastIntakeHoursAgo / 5.7);
-      if (effectiveCaffeine > 50) {
-        insights.push({
-          text: `Active caffeine in your system (~${Math.round(effectiveCaffeine)}mg). I'll boost sound masking and keep the room cooler to help you drift off.`,
-          icon: Coffee,
-          color: '#f0a060',
-        });
-      }
-
-      if (d.alcoholDrinks > 0) {
-        insights.push({
-          text: `Alcohol disrupts REM sleep. I'll optimize fan patterns for the second half of your night when effects wear off.`,
-          icon: Wine,
-          color: '#6e5ea8',
-        });
-      }
-
-      if (d.exerciseIntensity === 'intense' && d.exerciseHoursAgo < 3) {
-        insights.push({
-          text: `Recent intense exercise raises core temperature. Starting with higher airflow and gradually reducing as you cool down.`,
-          icon: ThermometerSun,
-          color: '#e94560',
-        });
-      } else if (d.exerciseIntensity === 'moderate') {
-        insights.push({
-          text: `Good exercise today! Your body temperature cycling should help deep sleep. Optimizing fan to support natural cooling.`,
-          icon: Dumbbell,
-          color: '#4ecdc4',
-        });
-      }
-
-      if (d.stressLevel >= 4) {
-        insights.push({
-          text: `Elevated stress detected. Switching to brown noise for deeper masking, and using a gentler fan ramp-up pattern.`,
-          icon: Brain,
-          color: '#6e5ea8',
-        });
-      }
-
-      if (d.mealHoursAgo < 2) {
-        insights.push({
-          text: `Recent meal may cause slight temperature rise during digestion. Adjusting fan to compensate.`,
-          icon: Utensils,
-          color: '#f0a060',
-        });
-      }
-
-      if (d.screenTimeMinutes > 360) {
-        insights.push({
-          text: `Extended screen time today. Blue light may have shifted your circadian rhythm. I'll extend the sleep onset optimization period.`,
-          icon: Monitor,
-          color: '#e94560',
-        });
-      }
-
-      if (insights.length === 0) {
-        insights.push({
-          text: `Everything looks great for a good night's sleep! Running standard optimization for your comfort.`,
-          icon: Moon,
-          color: '#4ecdc4',
-        });
-      }
-
-      return insights;
-    },
-    []
-  );
-
-  const insights = useMemo(() => generateInsights(data), [data, generateInsights]);
+  const insights = useMemo(() => generateInsights(data), [data]);
 
   // -- Step Labels ------------------------------------------------------------
 
@@ -683,9 +342,7 @@ export default function PreSleepCheckin({ onComplete, onSkip }: Props) {
               {insights.map((insight, i) => (
                 <InsightCard
                   key={i}
-                  icon={insight.icon}
-                  text={insight.text}
-                  color={insight.color}
+                  insight={insight}
                   index={i}
                 />
               ))}

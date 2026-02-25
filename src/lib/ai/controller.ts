@@ -13,10 +13,13 @@ import {
   type ResolvedAction,
   type AgentId,
 } from './blackboard';
-import { runPostureAgent } from './agents/posture-agent';
-import { runThermalAgent } from './agents/thermal-agent';
-import { runSoundAgent } from './agents/sound-agent';
-import { runEnergyAgent } from './agents/energy-agent';
+import { agentRegistry } from './agent-registry';
+
+// Side-effect imports: agents self-register with the registry
+import './agents/posture-agent';
+import './agents/thermal-agent';
+import './agents/sound-agent';
+import './agents/energy-agent';
 
 const PRIORITY_WEIGHTS = {
   critical: 4,
@@ -67,11 +70,10 @@ class BlackboardController {
   private _runCycle(): void {
     this._cycleCount++;
 
-    // 1. Run all agents (they post hypotheses to blackboard)
-    runPostureAgent();
-    runThermalAgent();
-    runSoundAgent();
-    runEnergyAgent();
+    // 1. Run all registered agents (they post hypotheses to blackboard)
+    for (const agent of agentRegistry.getAll()) {
+      agent.run();
+    }
 
     // 2. Read all hypotheses
     const hypotheses = blackboard.getHypotheses();

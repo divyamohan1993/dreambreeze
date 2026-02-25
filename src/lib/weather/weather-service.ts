@@ -4,6 +4,16 @@
  * Fetches weather based on user's geolocation (with permission).
  */
 
+import { CircuitBreaker } from '../resilience/circuit-breaker';
+
+const weatherCircuit = new CircuitBreaker({
+  failureThreshold: 3,
+  resetTimeoutMs: 60_000, // 1 min before retry (weather doesn't change fast)
+  onStateChange: (from, to) => {
+    console.warn(`[weather] Circuit breaker: ${from} -> ${to}`);
+  },
+});
+
 export interface WeatherData {
   temperatureCelsius: number;
   humidity: number;
@@ -65,18 +75,21 @@ export async function getWeather(): Promise<WeatherData | null> {
     // Fetch from Open-Meteo (free, no API key)
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&timezone=auto`;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+    const json = await weatherCircuit.execute(async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
-    let res: Response;
-    try {
-      res = await fetch(url, { signal: controller.signal });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-    if (!res.ok) throw new Error(`Weather API error: ${res.status}`);
+      let res: Response;
+      try {
+        res = await fetch(url, { signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      if (!res.ok) throw new Error(`Weather API error: ${res.status}`);
 
-    const json = await res.json();
+      return res.json();
+    });
+
     const current = json.current;
 
     const data: WeatherData = {

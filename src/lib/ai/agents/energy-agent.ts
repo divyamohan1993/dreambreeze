@@ -8,6 +8,7 @@
  * Combines these to predict cognitive readiness and trigger optimal wake sequence.
  */
 import { blackboard, type Hypothesis } from '../blackboard';
+import { agentRegistry } from '../agent-registry';
 
 export interface EnergyForecast {
   hour: number;
@@ -136,3 +137,5 @@ export function runEnergyAgent(): void {
     blackboard.postHypothesis(debtHypothesis);
   }
 }
+
+agentRegistry.register({ id: 'energy-agent', run: runEnergyAgent });

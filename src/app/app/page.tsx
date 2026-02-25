@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wind,
   Brain,
@@ -13,6 +13,8 @@ import {
   ThermometerSun,
   BatteryCharging,
   Moon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -25,6 +27,9 @@ import {
 } from 'recharts';
 import FanVisualization from '@/components/fan/FanVisualization';
 import SpeedKnob from '@/components/fan/SpeedKnob';
+import PostureSilhouette from '@/components/ui/dashboard/PostureSilhouette';
+import LEDStrip from '@/components/ui/dashboard/LEDStrip';
+import MetricCard from '@/components/ui/dashboard/MetricCard';
 import WeatherCard from '@/components/ui/WeatherCard';
 import CognitiveReadinessCard from '@/components/ui/CognitiveReadinessCard';
 import SleepDebtCard from '@/components/ui/SleepDebtCard';
@@ -60,11 +65,38 @@ interface TimelinePoint {
   label: string;
 }
 
+// -- Demo Timeline (issue #20) --------------------------------------------------
+// A realistic scripted sleep progression instead of random data.
+// Each entry represents ~20-40 min of simulated sleep compressed into 5s ticks.
+
+interface DemoEntry {
+  posture: Posture;
+  stage: SleepStage;
+  movement: number;
+  fanSpeed: number;
+  noise: NoiseType;
+  volume: number;
+  confidence: number;
+  stageMinutes: number;
+}
+
+const DEMO_TIMELINE: DemoEntry[] = [
+  { posture: 'supine', stage: 'awake', movement: 0.1, fanSpeed: 30, noise: 'rain', volume: 0.55, confidence: 0.94, stageMinutes: 5 },
+  { posture: 'supine', stage: 'light', movement: 0.05, fanSpeed: 35, noise: 'rain', volume: 0.50, confidence: 0.91, stageMinutes: 12 },
+  { posture: 'right-lateral', stage: 'deep', movement: 0.02, fanSpeed: 25, noise: 'rain', volume: 0.45, confidence: 0.88, stageMinutes: 28 },
+  { posture: 'right-lateral', stage: 'deep', movement: 0.01, fanSpeed: 20, noise: 'brown', volume: 0.40, confidence: 0.93, stageMinutes: 42 },
+  { posture: 'left-lateral', stage: 'rem', movement: 0.08, fanSpeed: 45, noise: 'brown', volume: 0.42, confidence: 0.86, stageMinutes: 18 },
+  { posture: 'fetal', stage: 'light', movement: 0.04, fanSpeed: 30, noise: 'ocean', volume: 0.48, confidence: 0.90, stageMinutes: 15 },
+  { posture: 'supine', stage: 'deep', movement: 0.02, fanSpeed: 22, noise: 'ocean', volume: 0.38, confidence: 0.95, stageMinutes: 35 },
+  { posture: 'supine', stage: 'rem', movement: 0.06, fanSpeed: 40, noise: 'rain', volume: 0.44, confidence: 0.89, stageMinutes: 22 },
+  { posture: 'left-lateral', stage: 'light', movement: 0.03, fanSpeed: 28, noise: 'rain', volume: 0.46, confidence: 0.92, stageMinutes: 10 },
+  { posture: 'right-lateral', stage: 'deep', movement: 0.01, fanSpeed: 18, noise: 'pink', volume: 0.36, confidence: 0.96, stageMinutes: 38 },
+  { posture: 'supine', stage: 'rem', movement: 0.07, fanSpeed: 42, noise: 'pink', volume: 0.43, confidence: 0.87, stageMinutes: 25 },
+  { posture: 'supine', stage: 'light', movement: 0.04, fanSpeed: 32, noise: 'rain', volume: 0.50, confidence: 0.91, stageMinutes: 8 },
+];
+
 // -- Constants ------------------------------------------------------------------
 
-const POSTURES: Posture[] = ['supine', 'prone', 'left-lateral', 'right-lateral', 'fetal'];
-const STAGES: SleepStage[] = ['awake', 'light', 'deep', 'rem'];
-const NOISE_TYPES: NoiseType[] = ['white', 'pink', 'brown', 'rain', 'ocean', 'forest'];
 const SPEED_LABELS = ['Off', 'Breeze', 'Gentle', 'Strong', 'Turbo'] as const;
 const SPEED_PERCENTS = [0, 20, 45, 70, 100] as const;
 
@@ -83,36 +115,6 @@ const NOISE_LABELS: Record<NoiseType, string> = {
   ocean: 'Ocean',
   forest: 'Forest',
 };
-
-// -- Posture SVG ----------------------------------------------------------------
-
-function PostureSilhouette({ posture, className = '' }: { posture: Posture; className?: string }) {
-  const paths: Record<Posture, string> = {
-    supine:
-      'M20 8a4 4 0 108 0 4 4 0 00-8 0zM18 16h12v2H18zM16 20h16l-2 16H18z',
-    prone:
-      'M20 8a4 4 0 108 0 4 4 0 00-8 0zM16 15h16v3H16zM18 20h12l-1 16H19z',
-    'left-lateral':
-      'M22 6a3.5 3.5 0 107 0 3.5 3.5 0 00-7 0zM20 13c0-1 2-2 4-2s3 1 3 2l1 8c0 1-1 2-2 2h-5c-1 0-2-1-2-2zM19 25l3 11h-4l-1-11z',
-    'right-lateral':
-      'M19 6a3.5 3.5 0 107 0 3.5 3.5 0 00-7 0zM17 13c0-1 2-2 4-2s3 1 3 2l1 8c0 1-1 2-2 2h-5c-1 0-2-1-2-2zM28 25l-3 11h4l1-11z',
-    fetal:
-      'M22 6a3.5 3.5 0 107 0 3.5 3.5 0 00-7 0zM18 12c0-1 3-2 5-1l4 5c1 1 0 3-1 3l-6 2c-1 0-2 0-3-1l-1-6c0-1 1-2 2-2z',
-    unknown:
-      'M20 8a4 4 0 108 0 4 4 0 00-8 0zM18 16h12v2H18zM16 20h16l-2 16H18z',
-  };
-
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      className={className}
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d={paths[posture]} fillRule="evenodd" />
-    </svg>
-  );
-}
 
 // -- Timeline data generator ----------------------------------------------------
 
@@ -154,58 +156,6 @@ function TimelineTooltip({ active, payload, label }: { active?: boolean; payload
   );
 }
 
-// -- LED Strip ------------------------------------------------------------------
-
-function LEDStrip({ level }: { level: SpeedLevel }) {
-  const colors = ['#4ecdc4', '#4ecdc4', '#f0a060', '#e94560', '#e94560'];
-  return (
-    <div className="flex items-center gap-2 justify-center">
-      {colors.map((color, i) => (
-        <div
-          key={i}
-          className="w-2.5 h-2.5 rounded-full transition-all duration-500"
-          style={{
-            background: i < level ? color : '#1a1f3d',
-            boxShadow:
-              i < level
-                ? `0 0 6px ${color}, 0 0 12px ${color}40`
-                : 'inset 0 1px 3px rgba(0,0,0,0.4)',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// -- Metric Card ----------------------------------------------------------------
-
-function MetricCard({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      className="glass skeu-raised p-4 rounded-2xl"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={14} className="text-db-text-muted" />
-        <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
-          {title}
-        </span>
-      </div>
-      {children}
-    </motion.div>
-  );
-}
-
 // -- Main Dashboard -------------------------------------------------------------
 
 export default function DashboardPage() {
@@ -213,16 +163,20 @@ export default function DashboardPage() {
   const [fanMode, setFanMode] = useState<FanMode>('auto');
   const [metrics, setMetrics] = useState<LiveMetrics>({
     posture: 'supine',
-    postureConfidence: 0.92,
-    sleepStage: 'light',
-    stageMinutes: 23,
-    fanSpeed: 45,
+    postureConfidence: 0.94,
+    sleepStage: 'awake',
+    stageMinutes: 5,
+    fanSpeed: 30,
     fanMode: 'auto',
     noiseType: 'rain',
-    volume: 0.6,
+    volume: 0.55,
     adaptive: true,
   });
   const [timeline] = useState<TimelinePoint[]>(() => generateTimeline());
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Demo timeline index -- cycles through the scripted scenario
+  const demoIndexRef = useRef(0);
 
   // -- Weather hook --------------------------------------------------------
   const { weather, loading: weatherLoading, error: weatherError, recommendation: weatherRecommendation, refresh: weatherRefresh } = useWeather();
@@ -292,26 +246,25 @@ export default function DashboardPage() {
   // -- Energy forecast (demo: 7.5h slept, 3.5h debt) ---------------------
   const energyForecastData = useMemo(() => generateEnergyForecast(7.5, 3.5), []);
 
-  // -- Simulated live updates every 3 seconds -------------------------------
+  // -- Scripted demo updates every 5 seconds (issue #20) --------------------
+  // Cycles through DEMO_TIMELINE instead of generating random values.
   useEffect(() => {
     const interval = setInterval(() => {
-      setMetrics((prev) => {
-        const newPosture = POSTURES[Math.floor(Math.random() * POSTURES.length)];
-        const newStage = STAGES[Math.floor(Math.random() * STAGES.length)];
-        const newNoise = NOISE_TYPES[Math.floor(Math.random() * NOISE_TYPES.length)];
-        return {
-          posture: Math.random() > 0.6 ? newPosture : prev.posture,
-          postureConfidence: +(0.75 + Math.random() * 0.24).toFixed(2),
-          sleepStage: Math.random() > 0.65 ? newStage : prev.sleepStage,
-          stageMinutes: Math.random() > 0.5 ? Math.floor(Math.random() * 45) + 5 : prev.stageMinutes + 1,
-          fanSpeed: SPEED_PERCENTS[speedLevel] + Math.floor(Math.random() * 10 - 5),
-          fanMode,
-          noiseType: Math.random() > 0.85 ? newNoise : prev.noiseType,
-          volume: +(0.3 + Math.random() * 0.5).toFixed(2),
-          adaptive: prev.adaptive,
-        };
-      });
-    }, 3000);
+      const entry = DEMO_TIMELINE[demoIndexRef.current];
+      demoIndexRef.current = (demoIndexRef.current + 1) % DEMO_TIMELINE.length;
+
+      setMetrics((prev) => ({
+        posture: entry.posture,
+        postureConfidence: entry.confidence,
+        sleepStage: entry.stage,
+        stageMinutes: entry.stageMinutes,
+        fanSpeed: fanMode === 'manual' ? SPEED_PERCENTS[speedLevel] : entry.fanSpeed,
+        fanMode,
+        noiseType: entry.noise,
+        volume: entry.volume,
+        adaptive: prev.adaptive,
+      }));
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [speedLevel, fanMode]);
@@ -342,7 +295,7 @@ export default function DashboardPage() {
         <div className="relative">
           <FanVisualization speed={fanSpeedPercent} size={280} />
           {/* Speed readout overlay */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-live="polite" aria-atomic="true">
             <div className="text-center mt-56">
               <AnimatePresence mode="wait">
                 <motion.span
@@ -374,11 +327,15 @@ export default function DashboardPage() {
         {/* Mode toggle: Auto | Manual */}
         <div
           className="glass rounded-full p-1 flex items-center gap-0"
+          role="radiogroup"
+          aria-label="Fan mode"
           style={{ border: '1px solid rgba(255,255,255,0.06)' }}
         >
           {(['auto', 'manual'] as FanMode[]).map((mode) => (
             <button
               key={mode}
+              role="radio"
+              aria-checked={fanMode === mode}
               onClick={() => setFanMode(mode)}
               className={`relative px-5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
                 fanMode === mode
@@ -405,7 +362,7 @@ export default function DashboardPage() {
       {/* ======================================================================
           MIDDLE SECTION -- Live Metrics 2x2 Grid
           ====================================================================== */}
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-2 gap-3" aria-live="polite" aria-atomic="false">
         {/* Current Posture */}
         <MetricCard icon={User} title="Posture">
           <div className="flex items-center gap-3">
@@ -489,203 +446,233 @@ export default function DashboardPage() {
       </section>
 
       {/* ======================================================================
-          BOTTOM SECTION -- Tonight's Timeline
+          COLLAPSIBLE DETAIL SECTIONS (issue #10)
+          Sections 3-5 are behind a toggle to reduce mobile scroll depth.
           ====================================================================== */}
-      <section className="glass skeu-raised p-4 rounded-2xl">
-        <div className="flex items-center gap-2 mb-3">
-          <Activity size={14} className="text-db-text-muted" />
-          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
-            Tonight&apos;s Timeline
-          </span>
-        </div>
-
-        <div className="h-44">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={timeline} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-              <defs>
-                <linearGradient id="stageGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4ecdc4" stopOpacity={0.4} />
-                  <stop offset="50%" stopColor="#6e5ea8" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#0a0e27" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="time"
-                tick={{ fill: '#555577', fontSize: 10 }}
-                axisLine={{ stroke: '#1a1f3d' }}
-                tickLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                domain={[0, 3]}
-                ticks={[0, 1, 2, 3]}
-                tickFormatter={(v: number) =>
-                  ['Deep', 'Light', 'REM', 'Awake'][v] || ''
-                }
-                tick={{ fill: '#555577', fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                width={44}
-              />
-              <Tooltip content={<TimelineTooltip />} />
-              <Area
-                type="stepAfter"
-                dataKey="stage"
-                stroke="#4ecdc4"
-                strokeWidth={2}
-                fill="url(#stageGradient)"
-                animationDuration={1200}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Stage legend */}
-        <div className="flex items-center justify-center gap-4 mt-2">
-          {Object.entries(STAGE_MAP).map(([, { label, color }]) => (
-            <div key={label} className="flex items-center gap-1">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-[10px] text-db-text-dim">{label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ======================================================================
-          AI AGENTS STATUS BADGE
-          ====================================================================== */}
-      <motion.div
-        className="glass skeu-raised rounded-2xl px-4 py-3 flex items-center gap-3"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="relative flex-shrink-0">
-          <Bot size={18} className="text-db-lavender" />
+      <AnimatePresence initial={false}>
+        {showDetails && (
           <motion.div
-            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
-            style={{ background: '#4ecdc4', boxShadow: '0 0 6px #4ecdc4' }}
-            animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-db-text">AI Agents</span>
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-              style={{
-                background: 'rgba(78,205,196,0.12)',
-                color: '#4ecdc4',
-                border: '1px solid rgba(78,205,196,0.2)',
-              }}
-            >
-              <Sparkles size={9} />
-              4 agents active
-            </span>
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={latestInsight}
-              className="text-[10px] text-db-text-dim mt-0.5 truncate"
-              initial={{ opacity: 0, y: 4 }}
+            key="detail-sections"
+            className="space-y-6"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: 'easeInOut' }}
+          >
+            {/* ==============================================================
+                SECTION 3 -- AI: Timeline + Agent insights
+                ============================================================== */}
+            <section className="glass skeu-raised p-4 rounded-2xl">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity size={14} className="text-db-text-muted" />
+                <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+                  Tonight&apos;s Timeline
+                </span>
+              </div>
+
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeline} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="stageGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4ecdc4" stopOpacity={0.4} />
+                        <stop offset="50%" stopColor="#6e5ea8" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#0a0e27" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="time"
+                      tick={{ fill: '#555577', fontSize: 10 }}
+                      axisLine={{ stroke: '#1a1f3d' }}
+                      tickLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      domain={[0, 3]}
+                      ticks={[0, 1, 2, 3]}
+                      tickFormatter={(v: number) =>
+                        ['Deep', 'Light', 'REM', 'Awake'][v] || ''
+                      }
+                      tick={{ fill: '#555577', fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={44}
+                    />
+                    <Tooltip content={<TimelineTooltip />} />
+                    <Area
+                      type="stepAfter"
+                      dataKey="stage"
+                      stroke="#4ecdc4"
+                      strokeWidth={2}
+                      fill="url(#stageGradient)"
+                      animationDuration={1200}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Stage legend */}
+              <div className="flex items-center justify-center gap-4 mt-2">
+                {Object.entries(STAGE_MAP).map(([, { label, color }]) => (
+                  <div key={label} className="flex items-center gap-1">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-[10px] text-db-text-dim">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* AI Agents Status Badge */}
+            <motion.div
+              className="glass skeu-raised rounded-2xl px-4 py-3 flex items-center gap-3"
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4 }}
             >
-              {latestInsight}
-            </motion.p>
-          </AnimatePresence>
-        </div>
-      </motion.div>
+              <div className="relative flex-shrink-0">
+                <Bot size={18} className="text-db-lavender" />
+                <motion.div
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
+                  style={{ background: '#4ecdc4', boxShadow: '0 0 6px #4ecdc4' }}
+                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </div>
+              <div className="flex-1 min-w-0" aria-live="polite" aria-atomic="true">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-db-text">AI Agents</span>
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                    style={{
+                      background: 'rgba(78,205,196,0.12)',
+                      color: '#4ecdc4',
+                      border: '1px solid rgba(78,205,196,0.2)',
+                    }}
+                  >
+                    <Sparkles size={9} />
+                    4 agents active
+                  </span>
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={latestInsight}
+                    className="text-[10px] text-db-text-dim mt-0.5 truncate"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {latestInsight}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
+            </motion.div>
 
-      {/* ======================================================================
-          WEATHER CARD
-          ====================================================================== */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <ThermometerSun size={14} className="text-db-text-muted" />
-          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
-            Local Weather
-          </span>
-        </div>
-        <WeatherCard
-          weather={weather}
-          loading={weatherLoading}
-          error={weatherError}
-          recommendation={weatherRecommendation}
-          onRefresh={weatherRefresh}
-        />
-      </section>
+            {/* ==============================================================
+                SECTION 4 -- Context: Weather + Readiness
+                ============================================================== */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <ThermometerSun size={14} className="text-db-text-muted" />
+                <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+                  Local Weather
+                </span>
+              </div>
+              <WeatherCard
+                weather={weather}
+                loading={weatherLoading}
+                error={weatherError}
+                recommendation={weatherRecommendation}
+                onRefresh={weatherRefresh}
+              />
+            </section>
 
-      {/* ======================================================================
-          TODAY'S READINESS -- Cognitive + Sleep Debt side by side
-          ====================================================================== */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Brain size={14} className="text-db-text-muted" />
-          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
-            Today&apos;s Readiness
-          </span>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <CognitiveReadinessCard
-            score={cognitiveReadiness.score}
-            grade={cognitiveReadiness.grade}
-            label={cognitiveReadiness.label}
-            breakdown={cognitiveReadiness.breakdown}
-            peakHours={cognitiveReadiness.peakHours}
-            advice={cognitiveReadiness.advice}
-          />
-          <SleepDebtCard
-            totalDebtHours={sleepDebt.totalDebtHours}
-            weeklyDebtHours={sleepDebt.weeklyDebtHours}
-            trend={sleepDebt.trend}
-            recoveryNightsNeeded={sleepDebt.recoveryNightsNeeded}
-            impairmentLevel={sleepDebt.impairmentLevel}
-            impairmentEquivalent={sleepDebt.impairmentEquivalent}
-            recommendations={sleepDebt.recommendations}
-          />
-        </div>
-      </section>
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Brain size={14} className="text-db-text-muted" />
+                <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+                  Today&apos;s Readiness
+                </span>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <CognitiveReadinessCard
+                  score={cognitiveReadiness.score}
+                  grade={cognitiveReadiness.grade}
+                  label={cognitiveReadiness.label}
+                  breakdown={cognitiveReadiness.breakdown}
+                  peakHours={cognitiveReadiness.peakHours}
+                  advice={cognitiveReadiness.advice}
+                />
+                <SleepDebtCard
+                  totalDebtHours={sleepDebt.totalDebtHours}
+                  weeklyDebtHours={sleepDebt.weeklyDebtHours}
+                  trend={sleepDebt.trend}
+                  recoveryNightsNeeded={sleepDebt.recoveryNightsNeeded}
+                  impairmentLevel={sleepDebt.impairmentLevel}
+                  impairmentEquivalent={sleepDebt.impairmentEquivalent}
+                  recommendations={sleepDebt.recommendations}
+                />
+              </div>
+            </section>
 
-      {/* ======================================================================
-          ENERGY FORECAST
-          ====================================================================== */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <BatteryCharging size={14} className="text-db-text-muted" />
-          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
-            Energy Forecast
-          </span>
-        </div>
-        <EnergyForecast
-          data={energyForecastData}
-          peakStart={cognitiveReadiness.peakHours.start}
-          peakEnd={cognitiveReadiness.peakHours.end}
-        />
-      </section>
+            {/* ==============================================================
+                SECTION 5 -- Forecast: Energy + Temperature
+                ============================================================== */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <BatteryCharging size={14} className="text-db-text-muted" />
+                <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+                  Energy Forecast
+                </span>
+              </div>
+              <EnergyForecast
+                data={energyForecastData}
+                peakStart={cognitiveReadiness.peakHours.start}
+                peakEnd={cognitiveReadiness.peakHours.end}
+              />
+            </section>
 
-      {/* ======================================================================
-          TONIGHT'S TEMPERATURE PROFILE
-          ====================================================================== */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Moon size={14} className="text-db-text-muted" />
-          <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
-            Tonight&apos;s Temperature Profile
-          </span>
-        </div>
-        <div className="glass skeu-raised p-4 rounded-2xl">
-          <TemperatureProfileSelector
-            selectedId={selectedProfileId}
-            onSelect={setSelectedProfileId}
-          />
-        </div>
-      </section>
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Moon size={14} className="text-db-text-muted" />
+                <span className="text-[11px] font-medium text-db-text-muted uppercase tracking-wider">
+                  Tonight&apos;s Temperature Profile
+                </span>
+              </div>
+              <div className="glass skeu-raised p-4 rounded-2xl">
+                <TemperatureProfileSelector
+                  selectedId={selectedProfileId}
+                  onSelect={setSelectedProfileId}
+                />
+              </div>
+            </section>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* -- Show more / Show less toggle (issue #10) -- */}
+      <button
+        onClick={() => setShowDetails((prev) => !prev)}
+        aria-expanded={showDetails}
+        aria-label={showDetails ? 'Show less details' : 'Show more details'}
+        className="w-full glass skeu-raised rounded-2xl px-4 py-3 flex items-center justify-center gap-2 text-sm font-medium text-db-text-dim hover:text-db-text transition-colors duration-300"
+        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        {showDetails ? (
+          <>
+            <ChevronUp size={16} />
+            Show less
+          </>
+        ) : (
+          <>
+            <ChevronDown size={16} />
+            More details
+          </>
+        )}
+      </button>
     </div>
   );
 }

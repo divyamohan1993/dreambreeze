@@ -295,6 +295,8 @@ export default function FanVisualization({
       />
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label={`Fan visualization, current speed ${speed} percent`}
         className="relative z-10"
         style={{ width: size, height: size }}
       />

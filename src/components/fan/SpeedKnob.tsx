@@ -142,6 +142,33 @@ export default function SpeedKnob({
     handleDragEnd();
   }, [handleDragEnd]);
 
+  // Keyboard support for accessibility
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (disabled) return;
+      let newValue = value;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        newValue = Math.min(4, value + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        newValue = Math.max(0, value - 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        newValue = 0;
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        newValue = 4;
+      }
+      if (newValue !== value) {
+        setActiveDetent(newValue);
+        currentRotation.set(DETENTS[newValue].angle);
+        onChange(newValue);
+      }
+    },
+    [disabled, value, onChange, currentRotation]
+  );
+
   const outerRingSize = size;
   const knobSize = size * 0.7;
   const tickRadius = size * 0.44;
@@ -150,6 +177,15 @@ export default function SpeedKnob({
     <div
       className="relative select-none"
       style={{ width: outerRingSize, height: outerRingSize }}
+      role="slider"
+      aria-label="Fan speed"
+      aria-valuemin={0}
+      aria-valuemax={4}
+      aria-valuenow={value}
+      aria-valuetext={DETENTS[value].label}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      onKeyDown={handleKeyDown}
     >
       {/* Outer ring with tick marks and labels */}
       <div className="absolute inset-0 rounded-full">

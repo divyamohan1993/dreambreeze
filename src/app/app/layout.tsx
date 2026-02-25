@@ -23,13 +23,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-db-navy text-db-text flex flex-col">
+      {/* Skip to content link for keyboard/screen reader users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-db-surface focus:text-white focus:rounded-lg"
+      >
+        Skip to content
+      </a>
+
       {/* Main content area */}
-      <main className="flex-1 pb-24 overflow-y-auto">
+      <main id="main-content" className="flex-1 pb-24 overflow-y-auto">
         <div className="page-enter">{children}</div>
       </main>
 
       {/* Bottom navigation bar */}
       <nav
+        aria-label="Main navigation"
         className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/[0.06]"
         style={{
           borderRadius: '20px 20px 0 0',
@@ -45,6 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
+                aria-current={active ? 'page' : undefined}
                 className="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors duration-200"
               >
                 <div className="relative">

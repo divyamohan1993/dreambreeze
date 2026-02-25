@@ -76,7 +76,7 @@ export default function LoadingScreen() {
   /* Wait for the document to be interactive, then fade out */
   useEffect(() => {
     // Mark ready after a minimum splash duration so it doesn't flash
-    const minTimer = setTimeout(() => setReady(true), 1400);
+    const minTimer = setTimeout(() => setReady(true), 400);
 
     const handleLoad = () => {
       // If minimum time already passed, dismiss immediately

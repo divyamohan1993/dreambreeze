@@ -145,6 +145,25 @@ body {
   background: var(--db-surface-hover);
 }
 
+/* Accessibility: visible focus indicators for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #4ecdc4;
+  outline-offset: 2px;
+}
+
+/* Screen-reader-only utility (for skip link and hidden labels) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

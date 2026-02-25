@@ -102,12 +102,14 @@ function GlassInput({
   type?: string;
   placeholder?: string;
 }) {
+  const inputId = `glass-input-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
     <div>
-      <label className="block text-[11px] text-db-text-muted mb-1 uppercase tracking-wider">
+      <label htmlFor={inputId} className="block text-[11px] text-db-text-muted mb-1 uppercase tracking-wider">
         {label}
       </label>
       <input
+        id={inputId}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -140,6 +142,9 @@ function Toggle({
         )}
       </div>
       <button
+        role="switch"
+        aria-checked={enabled}
+        aria-label={label}
         onClick={onToggle}
         className={`relative w-11 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ${
           enabled ? 'bg-db-teal' : 'bg-db-surface'
@@ -209,6 +214,7 @@ function Slider({
           min={min}
           max={max}
           value={value}
+          aria-label={label}
           onChange={(e) => onChange(Number(e.target.value))}
           className="absolute w-full h-6 opacity-0 cursor-pointer"
         />
@@ -412,7 +418,7 @@ export default function SettingsPage() {
           <p className="text-[11px] text-db-text-muted mb-2 uppercase tracking-wider">
             Connection Type
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Connection type">
             {(
               [
                 { type: 'demo' as ConnectionType, label: 'Demo', icon: Gauge },
@@ -422,6 +428,8 @@ export default function SettingsPage() {
             ).map(({ type, label, icon: Icon }) => (
               <button
                 key={type}
+                role="radio"
+                aria-checked={connectionType === type}
                 onClick={() => {
                   setConnectionType(type);
                   setConnectionStatus('disconnected');
@@ -564,10 +572,12 @@ export default function SettingsPage() {
           <p className="text-[11px] text-db-text-muted mb-2 uppercase tracking-wider">
             Default Noise Type
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Default noise type">
             {NOISE_OPTIONS.map(({ type, label, icon: Icon }) => (
               <button
                 key={type}
+                role="radio"
+                aria-checked={defaultNoise === type}
                 onClick={() => setDefaultNoise(type)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200 ${
                   defaultNoise === type
@@ -659,7 +669,7 @@ export default function SettingsPage() {
           <p className="text-[11px] text-db-text-muted mb-2 uppercase tracking-wider">
             Temperature Preference
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="radiogroup" aria-label="Temperature preference">
             {(
               [
                 { value: 'cool' as TempPreference, label: 'Cool', desc: 'Higher base fan' },
@@ -669,6 +679,8 @@ export default function SettingsPage() {
             ).map(({ value, label, desc }) => (
               <button
                 key={value}
+                role="radio"
+                aria-checked={tempPreference === value}
                 onClick={() => setTempPreference(value)}
                 className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-200 ${
                   tempPreference === value

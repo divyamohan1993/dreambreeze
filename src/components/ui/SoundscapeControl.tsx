@@ -98,12 +98,15 @@ export default function SoundscapeControl({
         <p className="text-xs text-db-text-dim mb-3 font-medium uppercase tracking-wider">
           Soundscape
         </p>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="grid grid-cols-6 gap-2" role="radiogroup" aria-label="Soundscape type">
           {NOISE_TYPES.map(({ type, label, icon: Icon, color }) => {
             const isActive = type === noiseType;
             return (
               <motion.button
                 key={type}
+                role="radio"
+                aria-checked={isActive}
+                aria-label={`${label} noise`}
                 onClick={() => onTypeChange(type)}
                 className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl transition-colors"
                 style={{
@@ -192,6 +195,7 @@ export default function SoundscapeControl({
             min={0}
             max={100}
             value={volume}
+            aria-label="Volume"
             onChange={handleSliderChange}
             className="absolute inset-0 w-full opacity-0 cursor-pointer z-10"
           />
@@ -232,6 +236,7 @@ export default function SoundscapeControl({
         {/* Play/Pause */}
         <motion.button
           onClick={onPlayToggle}
+          aria-label={isPlaying ? 'Pause soundscape' : 'Play soundscape'}
           className="flex items-center gap-2 px-4 py-2 rounded-xl"
           style={{
             background: isPlaying
@@ -264,6 +269,9 @@ export default function SoundscapeControl({
         {/* Adaptive toggle */}
         <motion.button
           onClick={onAdaptiveToggle}
+          role="switch"
+          aria-checked={isAdaptive}
+          aria-label="Adaptive sound mode"
           className="flex items-center gap-2 px-4 py-2 rounded-full"
           style={{
             background: isAdaptive

@@ -8,6 +8,15 @@
 
 import type { FanController } from './fan-controller';
 import type { Posture, SleepStage } from '@/stores/sleep-store';
+import { CircuitBreaker } from '../resilience/circuit-breaker';
+
+const webhookCircuit = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeoutMs: 30_000,
+  onStateChange: (from, to) => {
+    console.warn(`[webhook] Circuit breaker: ${from} -> ${to}`);
+  },
+});
 
 // -- Types ----------------------------------------------------------------------
 
@@ -134,26 +143,28 @@ export class WebhookFanController implements FanController {
   // -- Private ---------------------------------------------------------------
 
   private async _send(payload: WebhookPayload): Promise<void> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this._config.timeoutMs);
+    await webhookCircuit.execute(async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this._config.timeoutMs);
 
-    try {
-      const response = await fetch(this._config.url, {
-        method: this._config.method ?? 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(this._config.headers ?? {}),
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+      try {
+        const response = await fetch(this._config.url, {
+          method: this._config.method ?? 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(this._config.headers ?? {}),
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`Webhook returned ${response.status}: ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`Webhook returned ${response.status}: ${response.statusText}`);
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    });
   }
 
   private async _sendWithRetry(payload: WebhookPayload): Promise<void> {

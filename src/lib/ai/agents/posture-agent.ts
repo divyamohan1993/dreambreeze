@@ -5,6 +5,7 @@
  * Supine (back) = max exposure, prone (face down) = minimal, lateral = moderate.
  */
 import { blackboard, type Hypothesis } from '../blackboard';
+import { agentRegistry } from '../agent-registry';
 
 const POSTURE_FAN_MAP: Record<string, number> = {
   supine: 55, // Back -- full torso exposed, moderate-high airflow
@@ -40,3 +41,5 @@ export function runPostureAgent(): void {
 
   blackboard.postHypothesis(hypothesis);
 }
+
+agentRegistry.register({ id: 'posture-agent', run: runPostureAgent });

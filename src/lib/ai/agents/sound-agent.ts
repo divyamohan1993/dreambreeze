@@ -6,6 +6,7 @@
  * white noise best for sleep onset.
  */
 import { blackboard, type Hypothesis } from '../blackboard';
+import { agentRegistry } from '../agent-registry';
 
 interface SoundRecommendation {
   noiseType: string;
@@ -95,3 +96,5 @@ export function runSoundAgent(): void {
 
   blackboard.postHypothesis(hypothesis);
 }
+
+agentRegistry.register({ id: 'sound-agent', run: runSoundAgent });

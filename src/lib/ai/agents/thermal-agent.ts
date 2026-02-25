@@ -5,6 +5,7 @@
  * Body temp drops ~1-2 degrees F during sleep, lowest at 4-5 AM.
  */
 import { blackboard, type Hypothesis } from '../blackboard';
+import { agentRegistry } from '../agent-registry';
 
 /** Circadian body temp offset (relative to baseline) by hour */
 function getCircadianTempOffset(hour: number): number {
@@ -99,3 +100,5 @@ export function runThermalAgent(): void {
 
   blackboard.postHypothesis(hypothesis);
 }
+
+agentRegistry.register({ id: 'thermal-agent', run: runThermalAgent });

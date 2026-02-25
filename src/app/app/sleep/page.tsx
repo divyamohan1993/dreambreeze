@@ -8,6 +8,7 @@ import { useBlackboard } from '@/hooks/use-blackboard';
 import { useWeather } from '@/hooks/use-weather';
 import type { Posture, SleepStage, NoiseType } from '@/types/sleep';
 import { POSTURE_LABELS } from '@/lib/constants/posture';
+import { saveSession, type StoredSession } from '@/lib/storage/session-storage';
 
 // -- Types ----------------------------------------------------------------------
 
@@ -50,7 +51,13 @@ function PostureIcon({ posture }: { posture: Posture }) {
   };
 
   return (
-    <svg viewBox="0 0 24 24" className="w-6 h-6 text-db-teal/40" fill="currentColor">
+    <svg
+      viewBox="0 0 24 24"
+      className="w-6 h-6 text-db-teal/40"
+      fill="currentColor"
+      role="img"
+      aria-label={`${POSTURE_LABELS[posture]} posture`}
+    >
       <path d={svgPaths[posture]} />
     </svg>
   );
@@ -69,6 +76,11 @@ export default function SleepPage() {
   const [stage, setStage] = useState<SleepStage>('awake');
   const [speedLevel, setSpeedLevel] = useState(2);
   const [noiseType, setNoiseType] = useState<NoiseType>('rain');
+
+  // Session history tracking (accumulated during active session for storage)
+  const postureHistoryRef = useRef<Posture[]>([]);
+  const stageHistoryRef = useRef<SleepStage[]>([]);
+  const fanSpeedHistoryRef = useRef<number[]>([]);
 
   // Long-press state for stop button
   const [stopProgress, setStopProgress] = useState(0);
@@ -130,10 +142,18 @@ export default function SleepPage() {
   useEffect(() => {
     if (phase !== 'active') return;
     const interval = setInterval(() => {
-      setPosture(POSTURES[Math.floor(Math.random() * POSTURES.length)]);
-      setStage(STAGES[Math.floor(Math.random() * STAGES.length)]);
-      setSpeedLevel(Math.floor(Math.random() * 5));
+      const newPosture = POSTURES[Math.floor(Math.random() * POSTURES.length)];
+      const newStage = STAGES[Math.floor(Math.random() * STAGES.length)];
+      const newSpeed = Math.floor(Math.random() * 5);
+      setPosture(newPosture);
+      setStage(newStage);
+      setSpeedLevel(newSpeed);
       setNoiseType(NOISE_TYPES[Math.floor(Math.random() * NOISE_TYPES.length)]);
+
+      // Accumulate for session storage
+      postureHistoryRef.current.push(newPosture);
+      stageHistoryRef.current.push(newStage);
+      fanSpeedHistoryRef.current.push(newSpeed * 20); // 0-4 -> 0-80 scale
     }, 15000);
     return () => clearInterval(interval);
   }, [phase]);
@@ -200,6 +220,11 @@ export default function SleepPage() {
 
   // -- Start session --------------------------------------------------------
   const startSession = useCallback(() => {
+    // Reset history refs for the new session
+    postureHistoryRef.current = [];
+    stageHistoryRef.current = [];
+    fanSpeedHistoryRef.current = [];
+
     setPhase('calibrating');
     // Show calibration for 4 seconds, then go active
     setTimeout(() => {
@@ -210,6 +235,89 @@ export default function SleepPage() {
     }, 4000);
   }, [startAgents]);
 
+  // -- Save session to localStorage ------------------------------------------
+  const persistSession = useCallback(() => {
+    if (!sessionStart) return;
+    const now = Date.now();
+    const durationMinutes = Math.round((now - sessionStart) / 60000);
+
+    // Compute posture distribution from accumulated observations
+    const postureObs = postureHistoryRef.current;
+    const total = postureObs.length || 1;
+    const postureCounts: Record<string, number> = { supine: 0, lateral: 0, prone: 0, fetal: 0 };
+    let dominantPosture: Posture = 'supine';
+    let dominantCount = 0;
+    for (const p of postureObs) {
+      if (p === 'supine') postureCounts.supine++;
+      else if (p === 'left-lateral' || p === 'right-lateral') postureCounts.lateral++;
+      else if (p === 'prone') postureCounts.prone++;
+      else if (p === 'fetal') postureCounts.fetal++;
+    }
+    // Find dominant
+    const postureFreq: Record<Posture, number> = {} as Record<Posture, number>;
+    for (const p of postureObs) {
+      postureFreq[p] = (postureFreq[p] || 0) + 1;
+      if (postureFreq[p] > dominantCount) {
+        dominantCount = postureFreq[p];
+        dominantPosture = p;
+      }
+    }
+
+    // Compute stage distribution from accumulated observations
+    const stageObs = stageHistoryRef.current;
+    const stageTotal = stageObs.length || 1;
+    const stageCounts = { awake: 0, light: 0, deep: 0, rem: 0 };
+    for (const s of stageObs) {
+      stageCounts[s]++;
+    }
+
+    // Compute average fan speed
+    const fanObs = fanSpeedHistoryRef.current;
+    const avgFan = fanObs.length > 0
+      ? Math.round(fanObs.reduce((a, b) => a + b, 0) / fanObs.length)
+      : 40;
+
+    // Compute sleep score (simple heuristic based on deep + rem percentage)
+    const deepPct = Math.round((stageCounts.deep / stageTotal) * 100);
+    const remPct = Math.round((stageCounts.rem / stageTotal) * 100);
+    const awakePct = Math.round((stageCounts.awake / stageTotal) * 100);
+    const sleepScore = Math.min(100, Math.max(0,
+      Math.round(50 + (deepPct + remPct) * 0.5 - awakePct * 0.3 + Math.min(durationMinutes / 480, 1) * 20)
+    ));
+
+    const session: StoredSession = {
+      id: `session-${sessionStart}`,
+      date: new Date(sessionStart).toISOString().split('T')[0],
+      startedAt: new Date(sessionStart).toISOString(),
+      endedAt: new Date(now).toISOString(),
+      durationMinutes,
+      sleepScore,
+      stages: {
+        awake: Math.round((stageCounts.awake / stageTotal) * 100),
+        light: Math.round((stageCounts.light / stageTotal) * 100),
+        deep: deepPct,
+        rem: remPct,
+      },
+      postures: {
+        supine: Math.round((postureCounts.supine / total) * 100),
+        lateral: Math.round((postureCounts.lateral / total) * 100),
+        prone: Math.round((postureCounts.prone / total) * 100),
+        fetal: Math.round((postureCounts.fetal / total) * 100),
+      },
+      dominantPosture,
+      avgFanSpeed: avgFan,
+      insights: durationMinutes >= 30
+        ? [
+            `Session lasted ${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m.`,
+            `Deep sleep made up ${deepPct}% of your session.`,
+            `Fan averaged ${avgFan}% speed throughout the night.`,
+          ]
+        : [],
+    };
+
+    saveSession(session);
+  }, [sessionStart]);
+
   // -- Stop session long-press handlers -------------------------------------
   const startStopHold = useCallback(() => {
     setStopProgress(0);
@@ -219,6 +327,7 @@ export default function SleepPage() {
       setStopProgress(Math.min(progress, 100));
       if (progress >= 100) {
         if (stopTimerRef.current) clearInterval(stopTimerRef.current);
+        persistSession();
         stopAgents();
         setPhase('idle');
         setSessionStart(null);
@@ -226,7 +335,7 @@ export default function SleepPage() {
         setStopProgress(0);
       }
     }, 100);
-  }, [stopAgents]);
+  }, [stopAgents, persistSession]);
 
   const cancelStopHold = useCallback(() => {
     if (stopTimerRef.current) clearInterval(stopTimerRef.current);
@@ -401,6 +510,7 @@ export default function SleepPage() {
         </div>
 
         {/* -- Posture (dim) -- */}
+        <div aria-live="polite" aria-atomic="true">
         <AnimatePresence mode="wait">
           <motion.div
             key={posture}
@@ -414,6 +524,7 @@ export default function SleepPage() {
             <span className="text-[10px] text-db-text-muted">{POSTURE_LABELS[posture]}</span>
           </motion.div>
         </AnimatePresence>
+        </div>
 
         {/* -- Fan speed dots -- */}
         <div className="flex items-center gap-3">

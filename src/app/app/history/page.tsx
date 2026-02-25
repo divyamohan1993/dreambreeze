@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock,
@@ -33,6 +33,7 @@ import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
 import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
 import type { Posture, SleepStage } from '@/types/sleep';
 import { POSTURE_LABELS } from '@/lib/constants/posture';
+import { getSessions as getStoredSessions, type StoredSession } from '@/lib/storage/session-storage';
 
 // -- Types ----------------------------------------------------------------------
 
@@ -165,6 +166,102 @@ function generateMockSessions(): SleepSession[] {
   return sessions;
 }
 
+// -- Map stored sessions to display format ------------------------------------
+
+function mapStoredToDisplay(stored: StoredSession[]): SleepSession[] {
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const stageValues: Record<string, number> = { awake: 3, rem: 2, light: 1, deep: 0 };
+
+  return stored.map((s) => {
+    const startDate = new Date(s.startedAt);
+    const endDate = new Date(s.endedAt);
+    const dateStr = startDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+
+    // Build a realistic-looking timeline from stage percentages
+    const totalPoints = 24;
+    const timeline: { time: string; stage: number }[] = [];
+    const stageEntries: { stage: string; count: number }[] = [
+      { stage: 'awake', count: Math.round((s.stages.awake / 100) * totalPoints) },
+      { stage: 'light', count: Math.round((s.stages.light / 100) * totalPoints) },
+      { stage: 'deep', count: Math.round((s.stages.deep / 100) * totalPoints) },
+      { stage: 'rem', count: Math.round((s.stages.rem / 100) * totalPoints) },
+    ];
+
+    // Distribute stages in a sleep-like pattern:
+    // awake -> light -> deep -> light -> rem -> light -> deep -> rem -> light -> awake
+    const pattern: string[] = [];
+    const deepCount = stageEntries.find(e => e.stage === 'deep')!.count;
+    const remCount = stageEntries.find(e => e.stage === 'rem')!.count;
+    const lightCount = stageEntries.find(e => e.stage === 'light')!.count;
+    const awakeCount = stageEntries.find(e => e.stage === 'awake')!.count;
+
+    // Simple distribution: awake start, light, deep, light, rem, repeat, awake end
+    const halfAwake = Math.max(1, Math.floor(awakeCount / 2));
+    for (let i = 0; i < halfAwake; i++) pattern.push('awake');
+    for (let i = 0; i < Math.ceil(lightCount / 3); i++) pattern.push('light');
+    for (let i = 0; i < Math.ceil(deepCount / 2); i++) pattern.push('deep');
+    for (let i = 0; i < Math.ceil(lightCount / 3); i++) pattern.push('light');
+    for (let i = 0; i < Math.ceil(remCount / 2); i++) pattern.push('rem');
+    for (let i = 0; i < Math.floor(lightCount / 3); i++) pattern.push('light');
+    for (let i = 0; i < Math.floor(deepCount / 2); i++) pattern.push('deep');
+    for (let i = 0; i < Math.floor(remCount / 2); i++) pattern.push('rem');
+    for (let i = 0; i < awakeCount - halfAwake; i++) pattern.push('awake');
+
+    // Trim or pad to totalPoints
+    while (pattern.length < totalPoints) pattern.push('light');
+    const trimmedPattern = pattern.slice(0, totalPoints);
+
+    const minutesPerPoint = s.durationMinutes / totalPoints;
+    for (let j = 0; j < totalPoints; j++) {
+      const t = new Date(startDate.getTime() + j * minutesPerPoint * 60000);
+      timeline.push({
+        time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        stage: stageValues[trimmedPattern[j]] ?? 1,
+      });
+    }
+
+    // Posture distribution for pie chart
+    const postureDistribution = [
+      { name: 'Back', value: s.postures.supine, color: '#4ecdc4' },
+      { name: 'Side', value: s.postures.lateral, color: '#6e5ea8' },
+      { name: 'Fetal', value: s.postures.fetal, color: '#f0a060' },
+      { name: 'Stomach', value: s.postures.prone, color: '#e6c619' },
+    ].filter(p => p.value > 0);
+
+    // Fan speed over time (synthesized from average)
+    const fanSpeedOverTime = Array.from({ length: 12 }, (_, j) => {
+      // Vary around the average, clamped to 0-100
+      const variation = (Math.sin(j * 0.8) + Math.cos(j * 0.5)) * 10;
+      const speed = Math.max(0, Math.min(100, Math.round(s.avgFanSpeed + variation)));
+      return { time: `${(j * 0.5 + 0.5).toFixed(1)}h`, speed };
+    });
+
+    const bedHour = startDate.getHours();
+    const bedMin = startDate.getMinutes();
+    const wakeHour = endDate.getHours();
+    const wakeMin = endDate.getMinutes();
+
+    return {
+      id: s.id,
+      date: s.date,
+      dateShort: dateStr,
+      dayLabel: dayNames[startDate.getDay()],
+      sleepScore: s.sleepScore,
+      duration: s.durationMinutes,
+      bedtime: `${bedHour.toString().padStart(2, '0')}:${bedMin.toString().padStart(2, '0')}`,
+      wakeTime: `${wakeHour.toString().padStart(2, '0')}:${wakeMin.toString().padStart(2, '0')}`,
+      dominantPosture: s.dominantPosture,
+      timeline,
+      postureDistribution,
+      fanSpeedOverTime,
+      insights: s.insights,
+    };
+  });
+}
+
 // -- Mini Timeline Bar ----------------------------------------------------------
 
 function MiniTimelineBar({ timeline }: { timeline: { time: string; stage: number }[] }) {
@@ -209,22 +306,38 @@ function ChartTooltip({
 // -- Main Component -------------------------------------------------------------
 
 export default function HistoryPage() {
-  const sessions = useMemo(() => generateMockSessions(), []);
+  const [sessions, setSessions] = useState<SleepSession[]>([]);
+  const [isDemo, setIsDemo] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Summary calculations
-  const avgScore = Math.round(sessions.reduce((a, s) => a + s.sleepScore, 0) / sessions.length);
+  // Load real sessions from localStorage, falling back to mock data
+  useEffect(() => {
+    const stored = getStoredSessions();
+    if (stored.length > 0) {
+      setSessions(mapStoredToDisplay(stored));
+      setIsDemo(false);
+    } else {
+      setSessions(generateMockSessions());
+      setIsDemo(true);
+    }
+  }, []);
+
+  // Summary calculations (guarded for empty initial state)
+  const avgScore = sessions.length > 0
+    ? Math.round(sessions.reduce((a, s) => a + s.sleepScore, 0) / sessions.length)
+    : 0;
   const totalSleep = sessions.reduce((a, s) => a + s.duration, 0);
   const totalSleepHours = Math.floor(totalSleep / 60);
   const totalSleepMins = totalSleep % 60;
-  const bestNight = sessions.reduce((best, s) => (s.sleepScore > best.sleepScore ? s : best));
+  const bestNight = sessions.length > 0
+    ? sessions.reduce((best, s) => (s.sleepScore > best.sleepScore ? s : best))
+    : null;
   const postureCounts: Record<string, number> = {};
   sessions.forEach((s) => {
     postureCounts[s.dominantPosture] = (postureCounts[s.dominantPosture] || 0) + 1;
   });
-  const mostCommonPosture = Object.entries(postureCounts).sort(
-    (a, b) => b[1] - a[1]
-  )[0][0] as Posture;
+  const postureEntries = Object.entries(postureCounts).sort((a, b) => b[1] - a[1]);
+  const mostCommonPosture = (postureEntries.length > 0 ? postureEntries[0][0] : 'supine') as Posture;
 
   // Trend data (7-day scores)
   const trendData = sessions.map((s) => ({
@@ -276,12 +389,33 @@ export default function HistoryPage() {
     return `${h}h ${m}m`;
   };
 
+  // Don't render until sessions are loaded (prevents flash of empty state)
+  if (sessions.length === 0) {
+    return (
+      <div className="px-4 pt-6 pb-4 max-w-lg mx-auto">
+        <h1 className="text-xl font-bold text-db-text">Sleep History</h1>
+        <p className="text-xs text-db-text-dim mt-2">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 pt-6 pb-4 max-w-lg mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-db-text">Sleep History</h1>
-        <p className="text-xs text-db-text-dim mt-0.5">Last 7 nights</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-db-text">Sleep History</h1>
+          {isDemo && (
+            <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/10">
+              Demo data
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-db-text-dim mt-0.5">
+          {isDemo
+            ? 'Start a sleep session to see real history'
+            : `Last ${sessions.length} night${sessions.length !== 1 ? 's' : ''}`}
+        </p>
       </div>
 
       {/* ======================================================================
@@ -327,8 +461,8 @@ export default function HistoryPage() {
               Best Night
             </span>
           </div>
-          <p className="text-2xl font-bold text-db-amber">{bestNight.sleepScore}</p>
-          <p className="text-[10px] text-db-text-dim">{bestNight.dateShort}</p>
+          <p className="text-2xl font-bold text-db-amber">{bestNight?.sleepScore ?? '--'}</p>
+          <p className="text-[10px] text-db-text-dim">{bestNight?.dateShort ?? '--'}</p>
         </div>
 
         {/* Most Common Posture */}
@@ -487,6 +621,8 @@ export default function HistoryPage() {
               {/* Session summary row */}
               <button
                 onClick={() => setExpandedId(isExpanded ? null : session.id)}
+                aria-expanded={isExpanded}
+                aria-label={`Sleep session ${session.dateShort}, score ${session.sleepScore}, ${formatDuration(session.duration)}`}
                 className="w-full p-4 flex items-center gap-3 text-left"
               >
                 {/* Date */}
