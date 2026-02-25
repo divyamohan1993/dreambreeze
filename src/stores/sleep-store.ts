@@ -1,17 +1,11 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import type { Posture, SleepStage } from '@/types/sleep';
+
+// Re-export so existing consumers that import from this module still work.
+export type { Posture, SleepStage } from '@/types/sleep';
 
 // -- Types ----------------------------------------------------------------------
-
-export type Posture =
-  | 'supine'
-  | 'prone'
-  | 'left-lateral'
-  | 'right-lateral'
-  | 'fetal'
-  | 'unknown';
-
-export type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
 
 export interface PostureRecord {
   posture: Posture;

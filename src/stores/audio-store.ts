@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import type { NoiseType } from '@/types/sleep';
+
+// Re-export so existing consumers that import from this module still work.
+export type { NoiseType } from '@/types/sleep';
 
 // -- Types ----------------------------------------------------------------------
-
-export type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
 
 export interface AudioMix {
   primary: NoiseType;

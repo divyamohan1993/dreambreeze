@@ -13,8 +13,7 @@ import {
   Pause,
   Zap,
 } from 'lucide-react';
-
-type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
+import type { NoiseType } from '@/types/sleep';
 
 interface SoundscapeControlProps {
   noiseType: NoiseType;

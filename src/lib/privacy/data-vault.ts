@@ -39,6 +39,7 @@ export interface DataSummary {
     calibrationData: boolean;
   };
   retentionPolicy: string;
+  queryErrors?: string[];
 }
 
 export interface ExportedData {
@@ -50,6 +51,7 @@ export interface ExportedData {
   fanConfigs: Record<string, unknown>[];
   consentLog: Record<string, unknown>[];
   localPreferences: Record<string, unknown>;
+  errors?: string[];
 }
 
 // -- Constants ------------------------------------------------------------------
@@ -96,47 +98,73 @@ export class DataVault {
       return exportData;
     }
 
+    const exportErrors: string[] = [];
+
     // Profile
-    const { data: profile } = await this._supabase
+    const { data: profile, error: profileErr } = await this._supabase
       .from('profiles')
       .select('*')
       .eq('id', this._userId)
       .single();
-    exportData.profile = profile;
+    if (profileErr) {
+      exportErrors.push(`Failed to export profile: ${profileErr.message}`);
+    } else {
+      exportData.profile = profile;
+    }
 
     // Sleep sessions
-    const { data: sessions } = await this._supabase
+    const { data: sessions, error: sessionsErr } = await this._supabase
       .from('sleep_sessions')
       .select('*')
       .eq('user_id', this._userId)
       .order('start_time', { ascending: false });
-    exportData.sleepSessions = sessions ?? [];
+    if (sessionsErr) {
+      exportErrors.push(`Failed to export sleep sessions: ${sessionsErr.message}`);
+    } else {
+      exportData.sleepSessions = sessions ?? [];
+    }
 
     // Sleep events
     if (sessions && sessions.length > 0) {
       const sessionIds = sessions.map((s: Record<string, unknown>) => s.id);
-      const { data: events } = await this._supabase
+      const { data: events, error: eventsErr } = await this._supabase
         .from('sleep_events')
         .select('*')
         .in('session_id', sessionIds)
         .order('timestamp', { ascending: true });
-      exportData.sleepEvents = events ?? [];
+      if (eventsErr) {
+        exportErrors.push(`Failed to export sleep events: ${eventsErr.message}`);
+      } else {
+        exportData.sleepEvents = events ?? [];
+      }
     }
 
     // Fan configs
-    const { data: fanConfigs } = await this._supabase
+    const { data: fanConfigs, error: fanConfigsErr } = await this._supabase
       .from('fan_configs')
       .select('*')
       .eq('user_id', this._userId);
-    exportData.fanConfigs = fanConfigs ?? [];
+    if (fanConfigsErr) {
+      exportErrors.push(`Failed to export fan configs: ${fanConfigsErr.message}`);
+    } else {
+      exportData.fanConfigs = fanConfigs ?? [];
+    }
 
     // Consent log
-    const { data: consentLog } = await this._supabase
+    const { data: consentLog, error: consentLogErr } = await this._supabase
       .from('consent_log')
       .select('*')
       .eq('user_id', this._userId)
       .order('timestamp', { ascending: true });
-    exportData.consentLog = consentLog ?? [];
+    if (consentLogErr) {
+      exportErrors.push(`Failed to export consent log: ${consentLogErr.message}`);
+    } else {
+      exportData.consentLog = consentLog ?? [];
+    }
+
+    if (exportErrors.length > 0) {
+      exportData.errors = exportErrors;
+    }
 
     return exportData;
   }
@@ -229,24 +257,30 @@ export class DataVault {
       return summary;
     }
 
+    const queryErrors: string[] = [];
+
     // Profile
-    const { data: profile } = await this._supabase
+    const { data: profile, error: profileErr } = await this._supabase
       .from('profiles')
       .select('created_at')
       .eq('id', this._userId)
       .single();
-    if (profile) {
+    if (profileErr) {
+      queryErrors.push(`Profile query failed: ${profileErr.message}`);
+    } else if (profile) {
       summary.profile.exists = true;
       summary.profile.createdAt = profile.created_at;
     }
 
     // Sleep sessions count + dates
-    const { data: sessions, count: sessionCount } = await this._supabase
+    const { data: sessions, count: sessionCount, error: sessionsErr } = await this._supabase
       .from('sleep_sessions')
       .select('start_time, total_duration_min', { count: 'exact' })
       .eq('user_id', this._userId)
       .order('start_time', { ascending: true });
-    if (sessions && sessions.length > 0) {
+    if (sessionsErr) {
+      queryErrors.push(`Sleep sessions query failed: ${sessionsErr.message}`);
+    } else if (sessions && sessions.length > 0) {
       summary.sleepSessions.count = sessionCount ?? sessions.length;
       summary.sleepSessions.oldestDate = sessions[0].start_time;
       summary.sleepSessions.newestDate = sessions[sessions.length - 1].start_time;
@@ -256,28 +290,44 @@ export class DataVault {
     }
 
     // Sleep events count
-    const { count: eventsCount } = await this._supabase
+    const { count: eventsCount, error: eventsErr } = await this._supabase
       .from('sleep_events')
       .select('id', { count: 'exact', head: true })
       .in(
         'session_id',
         (sessions ?? []).map((s: { start_time: string }) => s.start_time),
       );
-    summary.sleepEvents.count = eventsCount ?? 0;
+    if (eventsErr) {
+      queryErrors.push(`Sleep events query failed: ${eventsErr.message}`);
+    } else {
+      summary.sleepEvents.count = eventsCount ?? 0;
+    }
 
     // Fan configs count
-    const { count: fansCount } = await this._supabase
+    const { count: fansCount, error: fansErr } = await this._supabase
       .from('fan_configs')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', this._userId);
-    summary.fanConfigs.count = fansCount ?? 0;
+    if (fansErr) {
+      queryErrors.push(`Fan configs query failed: ${fansErr.message}`);
+    } else {
+      summary.fanConfigs.count = fansCount ?? 0;
+    }
 
     // Consent log count
-    const { count: consentCount } = await this._supabase
+    const { count: consentCount, error: consentErr } = await this._supabase
       .from('consent_log')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', this._userId);
-    summary.consentLog.count = consentCount ?? 0;
+    if (consentErr) {
+      queryErrors.push(`Consent log query failed: ${consentErr.message}`);
+    } else {
+      summary.consentLog.count = consentCount ?? 0;
+    }
+
+    if (queryErrors.length > 0) {
+      summary.queryErrors = queryErrors;
+    }
 
     return summary;
   }

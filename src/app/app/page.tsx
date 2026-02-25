@@ -34,13 +34,12 @@ import { useWeather } from '@/hooks/use-weather';
 import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
 import { calculateSleepDebt } from '@/lib/ai/sleep-debt';
 import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
+import type { Posture, SleepStage, NoiseType } from '@/types/sleep';
+import { POSTURE_LABELS } from '@/lib/constants/posture';
 
 // -- Types ----------------------------------------------------------------------
 
-type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
-type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
 type SpeedLevel = 0 | 1 | 2 | 3 | 4;
-type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
 type FanMode = 'auto' | 'manual';
 
 interface LiveMetrics {
@@ -76,14 +75,6 @@ const STAGE_MAP: Record<SleepStage, { label: string; color: string; value: numbe
   deep: { label: 'Deep', color: '#1a6b66', value: 0 },
 };
 
-const POSTURE_LABELS: Record<Posture, string> = {
-  supine: 'Back',
-  prone: 'Stomach',
-  'left-lateral': 'Left Side',
-  'right-lateral': 'Right Side',
-  fetal: 'Fetal',
-};
-
 const NOISE_LABELS: Record<NoiseType, string> = {
   white: 'White Noise',
   pink: 'Pink Noise',
@@ -107,6 +98,8 @@ function PostureSilhouette({ posture, className = '' }: { posture: Posture; clas
       'M19 6a3.5 3.5 0 107 0 3.5 3.5 0 00-7 0zM17 13c0-1 2-2 4-2s3 1 3 2l1 8c0 1-1 2-2 2h-5c-1 0-2-1-2-2zM28 25l-3 11h4l1-11z',
     fetal:
       'M22 6a3.5 3.5 0 107 0 3.5 3.5 0 00-7 0zM18 12c0-1 3-2 5-1l4 5c1 1 0 3-1 3l-6 2c-1 0-2 0-3-1l-1-6c0-1 1-2 2-2z',
+    unknown:
+      'M20 8a4 4 0 108 0 4 4 0 00-8 0zM18 16h12v2H18zM16 20h16l-2 16H18z',
   };
 
   return (

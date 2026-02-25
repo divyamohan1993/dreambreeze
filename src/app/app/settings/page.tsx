@@ -35,11 +35,11 @@ import {
 import TemperatureProfileSelector from '@/components/ui/TemperatureProfileSelector';
 import WeatherCard from '@/components/ui/WeatherCard';
 import { useWeather } from '@/hooks/use-weather';
+import type { NoiseType } from '@/types/sleep';
 
 // -- Types ----------------------------------------------------------------------
 
 type ConnectionType = 'demo' | 'mqtt' | 'webhook';
-type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
 type TempPreference = 'cool' | 'neutral' | 'warm';
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -310,6 +310,59 @@ export default function SettingsPage() {
     if (savedCheckin !== null) setPreSleepCheckin(savedCheckin === 'true');
   }, []);
 
+  // Persist remaining preferences to localStorage -- load on mount
+  useEffect(() => {
+    const savedConnectionType = localStorage.getItem('db-connection-type');
+    if (savedConnectionType) setConnectionType(savedConnectionType as ConnectionType);
+
+    const savedMqttConfig = localStorage.getItem('db-mqtt-config');
+    if (savedMqttConfig) {
+      try { setMqttConfig(JSON.parse(savedMqttConfig)); } catch (_) { /* ignore */ }
+    }
+
+    const savedWebhookConfig = localStorage.getItem('db-webhook-config');
+    if (savedWebhookConfig) {
+      try { setWebhookConfig(JSON.parse(savedWebhookConfig)); } catch (_) { /* ignore */ }
+    }
+
+    const savedNoise = localStorage.getItem('db-default-noise');
+    if (savedNoise) setDefaultNoise(savedNoise as NoiseType);
+
+    const savedVolume = localStorage.getItem('db-default-volume');
+    if (savedVolume !== null) setDefaultVolume(Number(savedVolume));
+
+    const savedAdaptive = localStorage.getItem('db-adaptive-mode');
+    if (savedAdaptive !== null) setAdaptiveMode(savedAdaptive === 'true');
+
+    const savedAlarm = localStorage.getItem('db-alarm-time');
+    if (savedAlarm) setAlarmTime(savedAlarm);
+
+    const savedSensitivity = localStorage.getItem('db-sensitivity');
+    if (savedSensitivity !== null) setSensitivity(Number(savedSensitivity));
+
+    const savedTempPref = localStorage.getItem('db-temp-preference');
+    if (savedTempPref) setTempPreference(savedTempPref as TempPreference);
+
+    const savedBedtime = localStorage.getItem('db-target-bedtime');
+    if (savedBedtime) setTargetBedtime(savedBedtime);
+
+    const savedWakeTime = localStorage.getItem('db-target-wake-time');
+    if (savedWakeTime) setTargetWakeTime(savedWakeTime);
+  }, []);
+
+  // Persist remaining preferences to localStorage -- save on change
+  useEffect(() => { localStorage.setItem('db-connection-type', connectionType); }, [connectionType]);
+  useEffect(() => { localStorage.setItem('db-mqtt-config', JSON.stringify(mqttConfig)); }, [mqttConfig]);
+  useEffect(() => { localStorage.setItem('db-webhook-config', JSON.stringify(webhookConfig)); }, [webhookConfig]);
+  useEffect(() => { localStorage.setItem('db-default-noise', defaultNoise); }, [defaultNoise]);
+  useEffect(() => { localStorage.setItem('db-default-volume', String(defaultVolume)); }, [defaultVolume]);
+  useEffect(() => { localStorage.setItem('db-adaptive-mode', String(adaptiveMode)); }, [adaptiveMode]);
+  useEffect(() => { localStorage.setItem('db-alarm-time', alarmTime); }, [alarmTime]);
+  useEffect(() => { localStorage.setItem('db-sensitivity', String(sensitivity)); }, [sensitivity]);
+  useEffect(() => { localStorage.setItem('db-temp-preference', tempPreference); }, [tempPreference]);
+  useEffect(() => { localStorage.setItem('db-target-bedtime', targetBedtime); }, [targetBedtime]);
+  useEffect(() => { localStorage.setItem('db-target-wake-time', targetWakeTime); }, [targetWakeTime]);
+
   const toggleWeather = useCallback(() => {
     setWeatherEnabled((prev) => {
       const next = !prev;
@@ -407,7 +460,7 @@ export default function SettingsPage() {
               label="Broker URL"
               value={mqttConfig.brokerUrl}
               onChange={(v) => setMqttConfig((p) => ({ ...p, brokerUrl: v }))}
-              placeholder="mqtt://broker.hivemq.com:1883"
+              placeholder="wss://broker.hivemq.com:8884/mqtt"
             />
             <GlassInput
               label="Topic"

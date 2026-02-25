@@ -79,6 +79,18 @@ export class MQTTFanController implements FanController {
   }
 
   async connect(): Promise<boolean> {
+    // Warn if broker URL does not use a secure transport
+    if (
+      this._config.brokerUrl.startsWith('mqtt://') &&
+      !this._config.brokerUrl.startsWith('mqtts://') &&
+      !this._config.brokerUrl.startsWith('wss://')
+    ) {
+      console.warn(
+        '[DreamBreeze MQTT] WARNING: Broker URL uses unencrypted mqtt:// protocol. ' +
+        'Consider using wss:// or mqtts:// for a secure connection.',
+      );
+    }
+
     return new Promise<boolean>((resolve) => {
       const options: IClientOptions = {
         clientId: this._config.clientId ?? `dreambreeze-${Date.now()}`,
@@ -126,7 +138,7 @@ export class MQTTFanController implements FanController {
           this._handleStatusMessage(message);
         });
       } catch (err) {
-        console.error('[DreamBreeze MQTT] Failed to create client:', err);
+        console.error('[DreamBreeze MQTT] Failed to create client:', err instanceof Error ? err.message : 'Unknown error');
         resolve(false);
       }
     });

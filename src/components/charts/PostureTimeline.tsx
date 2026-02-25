@@ -2,6 +2,8 @@
 
 import { useMemo } from 'react';
 import { motion } from 'motion/react';
+import type { Posture } from '@/types/sleep';
+import { POSTURE_LABELS } from '@/lib/constants/posture';
 
 interface PostureData {
   posture: string;
@@ -42,13 +44,6 @@ const POSTURE_COLORS: Record<string, { bg: string; text: string; glow: string }>
   },
 };
 
-const POSTURE_LABELS: Record<string, string> = {
-  supine: 'On Back',
-  prone: 'Face Down',
-  'left-lateral': 'Left Side',
-  'right-lateral': 'Right Side',
-  fetal: 'Fetal',
-};
 
 export default function PostureTimeline({
   data,
@@ -120,7 +115,7 @@ export default function PostureTimeline({
 
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xs font-medium text-db-text">
-                  {POSTURE_LABELS[d.posture] || d.posture}
+                  {POSTURE_LABELS[d.posture as Posture] || d.posture}
                 </span>
                 <span
                   className="text-xs font-bold tabular-nums"

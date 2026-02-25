@@ -31,11 +31,10 @@ import CognitiveReadinessCard from '@/components/ui/CognitiveReadinessCard';
 import EnergyForecast from '@/components/charts/EnergyForecast';
 import { calculateCognitiveReadiness } from '@/lib/ai/cognitive-readiness';
 import { generateEnergyForecast } from '@/lib/ai/agents/energy-agent';
+import type { Posture, SleepStage } from '@/types/sleep';
+import { POSTURE_LABELS } from '@/lib/constants/posture';
 
 // -- Types ----------------------------------------------------------------------
-
-type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
-type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
 
 interface SleepSession {
   id: string;
@@ -54,14 +53,6 @@ interface SleepSession {
 }
 
 // -- Constants ------------------------------------------------------------------
-
-const POSTURE_LABELS: Record<Posture, string> = {
-  supine: 'Back',
-  prone: 'Stomach',
-  'left-lateral': 'Left Side',
-  'right-lateral': 'Right Side',
-  fetal: 'Fetal',
-};
 
 const STAGE_COLORS: Record<string, string> = {
   Awake: '#f0a060',

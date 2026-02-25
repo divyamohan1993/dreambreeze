@@ -72,6 +72,14 @@ export class WebhookFanController implements FanController {
    * Returns true if the webhook responds with a 2xx status.
    */
   async connect(): Promise<boolean> {
+    // Warn if webhook URL does not use HTTPS
+    if (this._config.url.startsWith('http://')) {
+      console.warn(
+        '[DreamBreeze Webhook] WARNING: Webhook URL uses unencrypted http:// protocol. ' +
+        'Consider using https:// for a secure connection.',
+      );
+    }
+
     try {
       const testPayload: WebhookPayload = {
         speed: 0,

@@ -6,12 +6,10 @@ import { Moon, Wind, Volume2, StopCircle, Loader2, Cloud, Thermometer, Zap } fro
 import PreSleepCheckin, { type PreSleepData } from '@/components/ui/PreSleepCheckin';
 import { useBlackboard } from '@/hooks/use-blackboard';
 import { useWeather } from '@/hooks/use-weather';
+import type { Posture, SleepStage, NoiseType } from '@/types/sleep';
+import { POSTURE_LABELS } from '@/lib/constants/posture';
 
 // -- Types ----------------------------------------------------------------------
-
-type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal';
-type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
-type NoiseType = 'white' | 'pink' | 'brown' | 'rain' | 'ocean' | 'forest';
 
 type SessionPhase = 'pre-sleep' | 'idle' | 'calibrating' | 'active';
 
@@ -27,14 +25,7 @@ const POSTURE_ICONS: Record<Posture, string> = {
   'left-lateral': '\u{2B05}',
   'right-lateral': '\u{27A1}',
   fetal: '\u{1F476}',
-};
-
-const POSTURE_LABELS: Record<Posture, string> = {
-  supine: 'Back',
-  prone: 'Stomach',
-  'left-lateral': 'Left Side',
-  'right-lateral': 'Right Side',
-  fetal: 'Fetal',
+  unknown: '?',
 };
 
 const NOISE_ICONS: Record<NoiseType, string> = {
@@ -55,6 +46,7 @@ function PostureIcon({ posture }: { posture: Posture }) {
     'left-lateral': 'M13 3a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm-2 6c0-.8 1.5-1.5 3-1.5s2 .7 2 1.5l.5 6H10.5zm-1 7l2 8h-3z',
     'right-lateral': 'M11 3a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm-1 6c0-.8 1.5-1.5 3-1.5s2 .7 2 1.5l.5 6H9.5zm6 7l-2 8h3z',
     fetal: 'M13 3a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm-3 7c0-.8 2-1.5 3.5-1l3 3.5c.5.7 0 2-.7 2l-4.5 1.5c-.8 0-1.5-.3-2-.8z',
+    unknown: 'M12 4a3 3 0 100 6 3 3 0 000-6zm-4 8h8v1H8zm-1 2h10l-1.5 9h-7z',
   };
 
   return (
@@ -110,6 +102,14 @@ export default function SleepPage() {
       });
     }
   }, [weather, setWeatherData]);
+
+  // -- Skip pre-sleep check-in if disabled in settings ----------------------
+  useEffect(() => {
+    const checkinEnabled = localStorage.getItem('db-presleep-checkin');
+    if (checkinEnabled === 'false') {
+      setPhase('idle');
+    }
+  }, []);
 
   // -- Clock tick -----------------------------------------------------------
   useEffect(() => {

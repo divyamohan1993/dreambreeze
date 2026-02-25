@@ -1,23 +1,14 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-
-type Posture = 'supine' | 'prone' | 'left-lateral' | 'right-lateral' | 'fetal' | 'unknown';
+import type { Posture } from '@/types/sleep';
+import { POSTURE_LABELS } from '@/lib/constants/posture';
 
 interface PostureIndicatorProps {
   posture: Posture;
   confidence: number; // 0-1
   className?: string;
 }
-
-const POSTURE_LABELS: Record<Posture, string> = {
-  supine: 'On Back',
-  prone: 'Face Down',
-  'left-lateral': 'Left Side',
-  'right-lateral': 'Right Side',
-  fetal: 'Fetal',
-  unknown: 'Detecting...',
-};
 
 // SVG path data for each posture silhouette -- human figure
 // All paths are designed in a 120x200 viewBox
