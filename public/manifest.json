@@ -1,7 +1,7 @@
 {
-  "name": "DreamBreeze — AI Sleep Comfort",
+  "name": "DreamBreeze - Science-Based Sleep Comfort",
   "short_name": "DreamBreeze",
-  "description": "AI-powered fan control based on sleep posture. Your phone becomes your sleep comfort agent.",
+  "description": "Science-based fan control based on sleep posture. Your phone becomes your sleep comfort system.",
   "start_url": "/app",
   "display": "standalone",
   "background_color": "#0a0e27",

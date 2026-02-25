@@ -302,7 +302,7 @@ export default function LandingPage() {
           >
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-db-teal/20 bg-db-teal/5 px-4 py-1.5 text-sm text-db-teal">
               <Sparkles size={14} />
-              AI-Powered Sleep Comfort
+              Science-Based Sleep Comfort
             </div>
           </motion.div>
 
@@ -324,7 +324,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-10 max-w-xl text-lg leading-relaxed text-db-text-dim md:text-xl"
           >
-            Your phone becomes an AI sleep comfort agent. It detects your posture, controls your
+            Your phone becomes a science-based sleep comfort system. It detects your posture, controls your
             fan, and creates the perfect soundscape&nbsp;&mdash;&nbsp;automatically.
           </motion.p>
 
@@ -391,8 +391,8 @@ export default function LandingPage() {
           <StepCard
             icon={Brain}
             number={2}
-            title="AI Takes Over"
-            description="Our edge AI detects your posture and sleep stage in real-time. No cloud required. It knows when you toss, turn, or enter REM."
+            title="Algorithms Take Over"
+            description="On-device algorithms detect your posture and sleep stage in real-time. No cloud required. They know when you toss, turn, or enter REM."
             index={1}
           />
           <StepCard
@@ -453,7 +453,7 @@ export default function LandingPage() {
           />
           <FeatureCard
             icon={Brain}
-            title="AI Sleep Coach"
+            title="Sleep Coach"
             description="After 3+ nights, get personalized insights on your sleep patterns, optimal room temperature, and comfort preferences."
             index={3}
           />
@@ -466,7 +466,7 @@ export default function LandingPage() {
           <FeatureCard
             icon={Lock}
             title="Privacy Vault"
-            description="All AI processing happens on your device. Zero raw sensor data leaves your phone. Your sleep data, your rules."
+            description="All processing happens on your device. Zero raw sensor data leaves your phone. Your sleep data, your rules."
             index={5}
           />
         </div>
@@ -492,14 +492,14 @@ export default function LandingPage() {
                 Your Sleep Data Never Leaves Your Phone
               </h2>
               <p className="mx-auto mb-6 max-w-lg text-db-text-dim leading-relaxed">
-                DreamBreeze uses on-device edge AI to process all sensor data locally. No raw
+                DreamBreeze uses on-device algorithms to process all sensor data locally. No raw
                 accelerometer data, no audio recordings, no personal information ever gets uploaded.
                 We&rsquo;re compliant with DPDP, GDPR, and CCPA by design&nbsp;&mdash;&nbsp;not as
                 an afterthought.
               </p>
 
               <div className="mb-6 flex flex-wrap justify-center gap-3">
-                {['Edge AI', 'On-Device Processing', 'Zero Data Upload', 'GDPR Ready'].map(
+                {['On-Device Processing', 'Zero Data Upload', 'GDPR Ready'].map(
                   (badge) => (
                     <span
                       key={badge}
@@ -630,6 +630,16 @@ export default function LandingPage() {
           </div>
         </motion.div>
       </Section>
+
+      {/* --- DISCLAIMER --- */}
+      <div className="px-6 pb-8">
+        <p className="text-xs text-slate-500 max-w-md mx-auto text-center mt-4">
+          Sleep stages estimated via accelerometer actigraphy. Not a medical device.{' '}
+          <a href="/app/science" className="text-teal-400 hover:underline">
+            See our methodology and citations
+          </a>.
+        </p>
+      </div>
 
       {/* --- FOOTER --- */}
       <footer className="border-t border-white/5 bg-db-navy px-6 py-16">
