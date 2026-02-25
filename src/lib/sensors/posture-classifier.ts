@@ -34,7 +34,6 @@ const HYSTERESIS_MS = 10_000; // hold posture for 10 seconds before changing
 const LATERAL_THRESHOLD_DEG = 20; // degrees of roll for lateral detection
 const PRONE_Z_THRESHOLD = -0.3; // normalized z threshold for face-down
 const FETAL_CURL_THRESHOLD = 0.15; // additional acceleration variance for fetal
-const G = 9.81; // gravitational acceleration
 
 // -- Helpers --------------------------------------------------------------------
 

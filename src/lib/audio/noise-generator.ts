@@ -10,7 +10,6 @@
 
 // -- Constants ------------------------------------------------------------------
 
-const BUFFER_SIZE = 4096;
 const NOISE_BUFFER_DURATION = 2; // seconds of pre-generated noise
 
 // -- Types ----------------------------------------------------------------------

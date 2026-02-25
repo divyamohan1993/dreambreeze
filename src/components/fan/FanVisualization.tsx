@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 
 interface FanVisualizationProps {
   speed: number; // 0-100
@@ -18,15 +18,39 @@ export default function FanVisualization({
   const currentSpeedRef = useRef(0);
   const angleRef = useRef(0);
   const lastTimeRef = useRef(0);
+  const speedRef = useRef(speed);
 
-  const draw = useCallback(
-    (ctx: CanvasRenderingContext2D, dpr: number, canvasSize: number) => {
+  // Sync speed prop into ref inside an effect (not during render)
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+
+    const maybeCtx = canvas.getContext('2d');
+    if (!maybeCtx) return;
+    const ctx: CanvasRenderingContext2D = maybeCtx;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    lastTimeRef.current = 0;
+
+    function draw() {
       const now = performance.now();
       const delta = lastTimeRef.current ? (now - lastTimeRef.current) / 1000 : 0.016;
       lastTimeRef.current = now;
 
       // Smooth speed interpolation with damping
-      const targetSpeed = speed;
+      const targetSpeed = speedRef.current;
       const damping = 0.03;
       currentSpeedRef.current +=
         (targetSpeed - currentSpeedRef.current) * damping;
@@ -40,6 +64,7 @@ export default function FanVisualization({
       const rps = (currentSpeedRef.current / 100) * 5;
       angleRef.current += rps * Math.PI * 2 * delta;
 
+      const canvasSize = size;
       const w = canvasSize * dpr;
       const h = canvasSize * dpr;
       const cx = w / 2;
@@ -249,38 +274,17 @@ export default function FanVisualization({
 
       ctx.restore();
 
-      animationRef.current = requestAnimationFrame(() =>
-        draw(ctx, dpr, canvasSize)
-      );
-    },
-    [speed]
-  );
+      animationRef.current = requestAnimationFrame(draw);
+    }
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = `${size}px`;
-    canvas.style.height = `${size}px`;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-
-    lastTimeRef.current = 0;
-    animationRef.current = requestAnimationFrame(() => draw(ctx, dpr, size));
+    animationRef.current = requestAnimationFrame(draw);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [size, draw]);
+  }, [size]);
 
   return (
     <div className={`relative inline-flex items-center justify-center ${className}`}>

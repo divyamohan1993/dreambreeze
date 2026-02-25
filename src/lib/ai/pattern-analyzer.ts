@@ -7,7 +7,7 @@
  * - Optimal fan settings per sleep stage
  */
 
-import type { Posture, SleepStage, PostureRecord, StageRecord, SleepSessionData, SleepEvent } from '@/stores/sleep-store';
+import type { Posture, SleepStage, PostureRecord, StageRecord, SleepSessionData } from '@/stores/sleep-store';
 
 // -- Types ----------------------------------------------------------------------
 

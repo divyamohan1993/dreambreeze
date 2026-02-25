@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   CloudRain,
@@ -42,6 +42,9 @@ const NOISE_TYPES: {
 
 function WaveformAnimation({ isPlaying }: { isPlaying: boolean }) {
   const bars = [3, 5, 2, 6, 4, 3, 5, 2, 4, 6, 3, 5];
+  const [barDurations] = useState(() =>
+    bars.map(() => 0.6 + Math.random() * 0.6),
+  );
   return (
     <div className="flex items-end gap-[2px] h-4">
       {bars.map((maxH, i) => (
@@ -59,7 +62,7 @@ function WaveformAnimation({ isPlaying }: { isPlaying: boolean }) {
           transition={
             isPlaying
               ? {
-                  duration: 0.6 + Math.random() * 0.6,
+                  duration: barDurations[i],
                   repeat: Infinity,
                   ease: 'easeInOut',
                   delay: i * 0.05,

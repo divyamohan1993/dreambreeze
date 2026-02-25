@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 /* ------------------------------------------------------------------ */
@@ -15,11 +15,13 @@ interface Particle {
   duration: number;
   delay: number;
   opacity: number;
+  animateY: number;
+  animateX: number;
 }
 
 function useParticles(count: number): Particle[] {
-  return useMemo(() => {
-    return Array.from({ length: count }, (_, i) => ({
+  const [particles] = useState(() =>
+    Array.from({ length: count }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -27,8 +29,11 @@ function useParticles(count: number): Particle[] {
       duration: 3 + Math.random() * 4,
       delay: Math.random() * 2,
       opacity: 0.1 + Math.random() * 0.3,
-    }));
-  }, [count]);
+      animateY: -30 - Math.random() * 40,
+      animateX: (Math.random() - 0.5) * 20,
+    })),
+  );
+  return particles;
 }
 
 /* ------------------------------------------------------------------ */
@@ -136,8 +141,8 @@ export default function LoadingScreen() {
                         : 'rgba(224,224,238,0.3)',
                 }}
                 animate={{
-                  y: [0, -30 - Math.random() * 40, 0],
-                  x: [0, (Math.random() - 0.5) * 20, 0],
+                  y: [0, p.animateY, 0],
+                  x: [0, p.animateX, 0],
                   opacity: [p.opacity, p.opacity * 1.8, p.opacity],
                   scale: [1, 1.3, 1],
                 }}

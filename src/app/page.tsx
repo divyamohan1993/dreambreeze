@@ -57,20 +57,27 @@ function AnimatedCounter({
 
 /* ------------------------- Floating particles (CSS-driven) -------------- */
 function Particles() {
+  const [particleStyles] = useState(() =>
+    Array.from({ length: 30 }).map(() => {
+      const size = Math.random() * 4 + 1;
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animationDelay: `${Math.random() * 8}s`,
+        animationDuration: `${Math.random() * 10 + 10}s`,
+      };
+    }),
+  );
+
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {Array.from({ length: 30 }).map((_, i) => (
+      {particleStyles.map((style, i) => (
         <div
           key={i}
           className="particle absolute rounded-full bg-db-teal/20"
-          style={{
-            width: `${Math.random() * 4 + 1}px`,
-            height: `${Math.random() * 4 + 1}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 8}s`,
-            animationDuration: `${Math.random() * 10 + 10}s`,
-          }}
+          style={style}
         />
       ))}
       <style>{`

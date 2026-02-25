@@ -4,10 +4,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Wifi,
-  WifiOff,
   Globe,
   Link2,
-  Volume2,
   CloudRain,
   Waves,
   TreePine,
@@ -19,7 +17,6 @@ import {
   AlarmClock,
   Music,
   Gauge,
-  Info,
   Github,
   Shield,
   Mail,
@@ -260,103 +257,96 @@ function StatusLED({ status }: { status: ConnectionStatus }) {
 
 export default function SettingsPage() {
   // Fan Integration
-  const [connectionType, setConnectionType] = useState<ConnectionType>('demo');
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
-  const [mqttConfig, setMqttConfig] = useState<MQTTConfig>({
-    brokerUrl: '',
-    topic: 'dreambreeze/fan',
-    username: '',
-    password: '',
+  const [connectionType, setConnectionType] = useState<ConnectionType>(() => {
+    if (typeof window === 'undefined') return 'demo';
+    return (localStorage.getItem('db-connection-type') as ConnectionType) || 'demo';
   });
-  const [webhookConfig, setWebhookConfig] = useState<WebhookConfig>({
-    url: '',
-    headers: '{"Authorization": "Bearer ..."}',
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [mqttConfig, setMqttConfig] = useState<MQTTConfig>(() => {
+    if (typeof window === 'undefined') return { brokerUrl: '', topic: 'dreambreeze/fan', username: '', password: '' };
+    try {
+      const saved = localStorage.getItem('db-mqtt-config');
+      if (saved) return JSON.parse(saved);
+    } catch { /* ignore */ }
+    return { brokerUrl: '', topic: 'dreambreeze/fan', username: '', password: '' };
+  });
+  const [webhookConfig, setWebhookConfig] = useState<WebhookConfig>(() => {
+    if (typeof window === 'undefined') return { url: '', headers: '{"Authorization": "Bearer ..."}' };
+    try {
+      const saved = localStorage.getItem('db-webhook-config');
+      if (saved) return JSON.parse(saved);
+    } catch { /* ignore */ }
+    return { url: '', headers: '{"Authorization": "Bearer ..."}' };
   });
   const [testingConnection, setTestingConnection] = useState(false);
 
   // Sound Preferences
-  const [defaultNoise, setDefaultNoise] = useState<NoiseType>('rain');
-  const [defaultVolume, setDefaultVolume] = useState(50);
-  const [adaptiveMode, setAdaptiveMode] = useState(true);
-  const [alarmTime, setAlarmTime] = useState('07:00');
+  const [defaultNoise, setDefaultNoise] = useState<NoiseType>(() => {
+    if (typeof window === 'undefined') return 'rain';
+    return (localStorage.getItem('db-default-noise') as NoiseType) || 'rain';
+  });
+  const [defaultVolume, setDefaultVolume] = useState(() => {
+    if (typeof window === 'undefined') return 50;
+    const saved = localStorage.getItem('db-default-volume');
+    return saved !== null ? Number(saved) : 50;
+  });
+  const [adaptiveMode, setAdaptiveMode] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('db-adaptive-mode');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [alarmTime, setAlarmTime] = useState(() => {
+    if (typeof window === 'undefined') return '07:00';
+    return localStorage.getItem('db-alarm-time') || '07:00';
+  });
   const [wakeSound, setWakeSound] = useState('Gentle Chimes');
 
   // Sleep Preferences
-  const [sensitivity, setSensitivity] = useState(60);
-  const [tempPreference, setTempPreference] = useState<TempPreference>('cool');
-  const [targetBedtime, setTargetBedtime] = useState('22:30');
-  const [targetWakeTime, setTargetWakeTime] = useState('06:30');
+  const [sensitivity, setSensitivity] = useState(() => {
+    if (typeof window === 'undefined') return 60;
+    const saved = localStorage.getItem('db-sensitivity');
+    return saved !== null ? Number(saved) : 60;
+  });
+  const [tempPreference, setTempPreference] = useState<TempPreference>(() => {
+    if (typeof window === 'undefined') return 'cool';
+    return (localStorage.getItem('db-temp-preference') as TempPreference) || 'cool';
+  });
+  const [targetBedtime, setTargetBedtime] = useState(() => {
+    if (typeof window === 'undefined') return '22:30';
+    return localStorage.getItem('db-target-bedtime') || '22:30';
+  });
+  const [targetWakeTime, setTargetWakeTime] = useState(() => {
+    if (typeof window === 'undefined') return '06:30';
+    return localStorage.getItem('db-target-wake-time') || '06:30';
+  });
 
   // Temperature Profile (persisted to localStorage)
-  const [selectedProfile, setSelectedProfile] = useState('optimal');
+  const [selectedProfile, setSelectedProfile] = useState(() => {
+    if (typeof window === 'undefined') return 'optimal';
+    return localStorage.getItem('db-temperature-profile') || 'optimal';
+  });
 
   // Smart Features
-  const [weatherEnabled, setWeatherEnabled] = useState(false);
-  const [preSleepCheckin, setPreSleepCheckin] = useState(true);
+  const [weatherEnabled, setWeatherEnabled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('db-weather-enabled');
+    return saved !== null ? saved === 'true' : false;
+  });
+  const [preSleepCheckin, setPreSleepCheckin] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('db-presleep-checkin');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   // Weather data (only fetch when enabled)
   const { weather, loading: weatherLoading, error: weatherError, recommendation: weatherRecommendation, refresh: refreshWeather } = useWeather();
-
-  // Persist temperature profile to localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('db-temperature-profile');
-    if (saved) setSelectedProfile(saved);
-  }, []);
 
   const handleProfileSelect = useCallback((id: string) => {
     setSelectedProfile(id);
     localStorage.setItem('db-temperature-profile', id);
   }, []);
 
-  // Persist smart features to localStorage
-  useEffect(() => {
-    const savedWeather = localStorage.getItem('db-weather-enabled');
-    const savedCheckin = localStorage.getItem('db-presleep-checkin');
-    if (savedWeather !== null) setWeatherEnabled(savedWeather === 'true');
-    if (savedCheckin !== null) setPreSleepCheckin(savedCheckin === 'true');
-  }, []);
-
-  // Persist remaining preferences to localStorage -- load on mount
-  useEffect(() => {
-    const savedConnectionType = localStorage.getItem('db-connection-type');
-    if (savedConnectionType) setConnectionType(savedConnectionType as ConnectionType);
-
-    const savedMqttConfig = localStorage.getItem('db-mqtt-config');
-    if (savedMqttConfig) {
-      try { setMqttConfig(JSON.parse(savedMqttConfig)); } catch (_) { /* ignore */ }
-    }
-
-    const savedWebhookConfig = localStorage.getItem('db-webhook-config');
-    if (savedWebhookConfig) {
-      try { setWebhookConfig(JSON.parse(savedWebhookConfig)); } catch (_) { /* ignore */ }
-    }
-
-    const savedNoise = localStorage.getItem('db-default-noise');
-    if (savedNoise) setDefaultNoise(savedNoise as NoiseType);
-
-    const savedVolume = localStorage.getItem('db-default-volume');
-    if (savedVolume !== null) setDefaultVolume(Number(savedVolume));
-
-    const savedAdaptive = localStorage.getItem('db-adaptive-mode');
-    if (savedAdaptive !== null) setAdaptiveMode(savedAdaptive === 'true');
-
-    const savedAlarm = localStorage.getItem('db-alarm-time');
-    if (savedAlarm) setAlarmTime(savedAlarm);
-
-    const savedSensitivity = localStorage.getItem('db-sensitivity');
-    if (savedSensitivity !== null) setSensitivity(Number(savedSensitivity));
-
-    const savedTempPref = localStorage.getItem('db-temp-preference');
-    if (savedTempPref) setTempPreference(savedTempPref as TempPreference);
-
-    const savedBedtime = localStorage.getItem('db-target-bedtime');
-    if (savedBedtime) setTargetBedtime(savedBedtime);
-
-    const savedWakeTime = localStorage.getItem('db-target-wake-time');
-    if (savedWakeTime) setTargetWakeTime(savedWakeTime);
-  }, []);
-
-  // Persist remaining preferences to localStorage -- save on change
+  // Persist preferences to localStorage on change
   useEffect(() => { localStorage.setItem('db-connection-type', connectionType); }, [connectionType]);
   useEffect(() => { localStorage.setItem('db-mqtt-config', JSON.stringify(mqttConfig)); }, [mqttConfig]);
   useEffect(() => { localStorage.setItem('db-webhook-config', JSON.stringify(webhookConfig)); }, [webhookConfig]);

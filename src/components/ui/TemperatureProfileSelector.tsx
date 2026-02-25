@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useCallback, useMemo, memo } from 'react';
 import { motion } from 'motion/react';
 import {
   Sparkles,
@@ -8,7 +8,6 @@ import {
   Snowflake,
   Sun,
   Zap,
-  type LucideIcon,
 } from 'lucide-react';
 import {
   TEMPERATURE_PROFILES,
@@ -19,16 +18,15 @@ import {
 /*  Icon resolver                                                              */
 /* -------------------------------------------------------------------------- */
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  Sparkles,
-  Flame,
-  Snowflake,
-  Sun,
-  Zap,
-};
-
-function resolveIcon(name: string): LucideIcon {
-  return ICON_MAP[name] ?? Sparkles;
+/** Renders a profile icon by name without creating components during render */
+function ProfileIconDisplay({ name, size, style }: { name: string; size: number; style?: React.CSSProperties }) {
+  switch (name) {
+    case 'Flame': return <Flame size={size} style={style} />;
+    case 'Snowflake': return <Snowflake size={size} style={style} />;
+    case 'Sun': return <Sun size={size} style={style} />;
+    case 'Zap': return <Zap size={size} style={style} />;
+    default: return <Sparkles size={size} style={style} />;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -165,7 +163,7 @@ function ProfileSparkline({
 /*  Individual profile card                                                    */
 /* -------------------------------------------------------------------------- */
 
-function ProfileCard({
+const ProfileCard = memo(function ProfileCard({
   profile,
   isSelected,
   onSelect,
@@ -175,7 +173,6 @@ function ProfileCard({
   onSelect: () => void;
 }) {
   const color = getProfileColor(profile.id);
-  const Icon = resolveIcon(profile.icon);
 
   return (
     <motion.button
@@ -225,7 +222,8 @@ function ProfileCard({
               transition: 'all 0.3s ease',
             }}
           >
-            <Icon
+            <ProfileIconDisplay
+              name={profile.icon}
               size={15}
               style={{
                 color: isSelected ? color : '#555577',
@@ -323,6 +321,43 @@ function ProfileCard({
       </div>
     </motion.button>
   );
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Active profile summary                                                     */
+/* -------------------------------------------------------------------------- */
+
+function ActiveProfileSummary({ selectedId }: { selectedId: string }) {
+  const active = TEMPERATURE_PROFILES.find((p) => p.id === selectedId);
+
+  if (!selectedId || !active) return null;
+
+  const color = getProfileColor(active.id);
+
+  return (
+    <motion.div
+      className="mt-4 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+      style={{
+        background: `${color}08`,
+        border: `1px solid ${color}18`,
+      }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      key={selectedId}
+      transition={{ duration: 0.3 }}
+    >
+      <ProfileIconDisplay name={active.icon} size={14} style={{ color }} />
+      <p className="text-[11px] text-db-text-dim leading-tight flex-1">
+        <span className="font-medium" style={{ color }}>
+          {active.name}
+        </span>
+        {' '}selected.{' '}
+        Hot weather boost: +{active.hotWeatherBoost}%
+        {' / '}
+        Cold reduce: -{active.coldWeatherReduce}%
+      </p>
+    </motion.div>
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -402,37 +437,7 @@ export default function TemperatureProfileSelector({
       </div>
 
       {/* Active profile summary */}
-      {selectedId && (() => {
-        const active = TEMPERATURE_PROFILES.find((p) => p.id === selectedId);
-        if (!active) return null;
-        const color = getProfileColor(active.id);
-        const ActiveIcon = resolveIcon(active.icon);
-
-        return (
-          <motion.div
-            className="mt-4 flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-            style={{
-              background: `${color}08`,
-              border: `1px solid ${color}18`,
-            }}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            key={selectedId}
-            transition={{ duration: 0.3 }}
-          >
-            <ActiveIcon size={14} style={{ color }} />
-            <p className="text-[11px] text-db-text-dim leading-tight flex-1">
-              <span className="font-medium" style={{ color }}>
-                {active.name}
-              </span>
-              {' '}selected.{' '}
-              Hot weather boost: +{active.hotWeatherBoost}%
-              {' / '}
-              Cold reduce: -{active.coldWeatherReduce}%
-            </p>
-          </motion.div>
-        );
-      })()}
+      <ActiveProfileSummary selectedId={selectedId} />
     </div>
   );
 }

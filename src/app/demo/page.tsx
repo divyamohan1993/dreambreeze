@@ -217,14 +217,18 @@ function DemoFan({ speed }: { speed: number }) {
 }
 
 /* ------------------------- Sound wave viz ------------------------------- */
-function SoundWave({ volume, type }: { volume: number; type: string }) {
+function SoundWave({ volume }: { volume: number }) {
+  const [randomFactors] = useState(() =>
+    Array.from({ length: 16 }).map(() => Math.random()),
+  );
+
   return (
     <div className="flex h-8 items-end gap-0.5">
-      {Array.from({ length: 16 }).map((_, i) => {
+      {randomFactors.map((rand, i) => {
         const base = volume / 100;
         const height = Math.max(
           4,
-          base * 32 * (0.3 + 0.7 * Math.sin((i / 16) * Math.PI)) * (0.6 + 0.4 * Math.random()),
+          base * 32 * (0.3 + 0.7 * Math.sin((i / 16) * Math.PI)) * (0.6 + 0.4 * rand),
         );
         return (
           <div
@@ -606,7 +610,7 @@ export default function DemoPage() {
                   {frame.soundType}
                 </motion.div>
               </AnimatePresence>
-              <SoundWave volume={frame.soundVol} type={frame.soundType} />
+              <SoundWave volume={frame.soundVol} />
               <div className="mt-2 flex justify-between text-xs text-db-text-dim">
                 <span>Volume</span>
                 <span className="font-bold text-db-lavender">{frame.soundVol}%</span>

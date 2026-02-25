@@ -76,7 +76,7 @@ export function useDeviceMotion(sampleRate = 50): UseDeviceMotionReturn {
         setError('Motion sensor permission denied.');
       }
       return granted;
-    } catch (err) {
+    } catch {
       setError('Failed to request sensor permission.');
       return false;
     }

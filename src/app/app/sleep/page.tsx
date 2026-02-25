@@ -20,15 +20,6 @@ const POSTURES: Posture[] = ['supine', 'prone', 'left-lateral', 'right-lateral',
 const STAGES: SleepStage[] = ['awake', 'light', 'deep', 'rem'];
 const NOISE_TYPES: NoiseType[] = ['white', 'pink', 'brown', 'rain', 'ocean', 'forest'];
 
-const POSTURE_ICONS: Record<Posture, string> = {
-  supine: '\u{1F6CC}',
-  prone: '\u{1F9D8}',
-  'left-lateral': '\u{2B05}',
-  'right-lateral': '\u{27A1}',
-  fetal: '\u{1F476}',
-  unknown: '?',
-};
-
 const NOISE_ICONS: Record<NoiseType, string> = {
   white: 'W',
   pink: 'P',
@@ -66,14 +57,20 @@ function PostureIcon({ posture }: { posture: Posture }) {
 // -- Component ------------------------------------------------------------------
 
 export default function SleepPage() {
-  const [phase, setPhase] = useState<SessionPhase>('pre-sleep');
+  const [phase, setPhase] = useState<SessionPhase>(() => {
+    if (typeof window !== 'undefined') {
+      const checkinEnabled = localStorage.getItem('db-presleep-checkin');
+      if (checkinEnabled === 'false') return 'idle';
+    }
+    return 'pre-sleep';
+  });
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Simulated live data
   const [posture, setPosture] = useState<Posture>('supine');
-  const [stage, setStage] = useState<SleepStage>('awake');
+  const [, setStage] = useState<SleepStage>('awake');
   const [speedLevel, setSpeedLevel] = useState(2);
   const [noiseType, setNoiseType] = useState<NoiseType>('rain');
 
@@ -90,7 +87,6 @@ export default function SleepPage() {
 
   // Blackboard agents
   const {
-    snapshot,
     insights,
     startAgents,
     stopAgents,
@@ -100,7 +96,7 @@ export default function SleepPage() {
   } = useBlackboard();
 
   // Weather
-  const { weather, loading: weatherLoading } = useWeather();
+  const { weather } = useWeather();
 
   // -- Pass weather data to blackboard when available ---------------------
   useEffect(() => {
@@ -114,14 +110,6 @@ export default function SleepPage() {
       });
     }
   }, [weather, setWeatherData]);
-
-  // -- Skip pre-sleep check-in if disabled in settings ----------------------
-  useEffect(() => {
-    const checkinEnabled = localStorage.getItem('db-presleep-checkin');
-    if (checkinEnabled === 'false') {
-      setPhase('idle');
-    }
-  }, []);
 
   // -- Clock tick -----------------------------------------------------------
   useEffect(() => {

@@ -7,7 +7,7 @@
  * to produce a stable, hysteresis-smoothed posture estimate.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PostureClassifier } from '@/lib/sensors/posture-classifier';
 import { useSensorStore } from '@/stores/sensor-store';
 import { useSleepStore, type Posture } from '@/stores/sleep-store';
@@ -22,6 +22,15 @@ export interface UsePostureReturn {
 export function usePosture(): UsePostureReturn {
   const classifierRef = useRef(new PostureClassifier());
   const resultRef = useRef<{
+    posture: Posture;
+    confidence: number;
+    rawAngles: { pitch: number; roll: number; yaw: number };
+  }>({
+    posture: 'unknown',
+    confidence: 0,
+    rawAngles: { pitch: 0, roll: 0, yaw: 0 },
+  });
+  const [postureState, setPostureState] = useState<{
     posture: Posture;
     confidence: number;
     rawAngles: { pitch: number; roll: number; yaw: number };
@@ -50,6 +59,11 @@ export function usePosture(): UsePostureReturn {
         });
 
         resultRef.current = result;
+        setPostureState({
+          posture: result.posture,
+          confidence: result.confidence,
+          rawAngles: result.rawAngles,
+        });
 
         // Update sleep store if posture changed
         if (result.posture !== currentPosture) {
@@ -66,9 +80,9 @@ export function usePosture(): UsePostureReturn {
   }, []);
 
   return {
-    currentPosture: resultRef.current.posture,
-    confidence: resultRef.current.confidence,
-    rawAngles: resultRef.current.rawAngles,
+    currentPosture: postureState.posture,
+    confidence: postureState.confidence,
+    rawAngles: postureState.rawAngles,
     resetClassifier,
   };
 }

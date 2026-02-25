@@ -16,9 +16,10 @@ export default function AppError({
         <h2 className="text-lg font-bold text-white mb-2">
           Something went wrong
         </h2>
-        <p className="text-sm text-white/50 mb-6">
+        <p className="text-sm text-white/50 mb-2">
           We hit an issue loading this section. Please try again.
         </p>
+        <p className="text-sm text-white/50 mt-2 mb-6">{error.message}</p>
         <button
           onClick={reset}
           className="px-6 py-3 rounded-xl bg-[#4ecdc4] text-[#0a0e27] font-semibold text-sm hover:opacity-90 transition-opacity"

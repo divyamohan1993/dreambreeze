@@ -22,10 +22,9 @@ export function useBlackboard() {
   const [insights, setInsights] = useState<
     Array<{ message: string; category: string; timestamp: number }>
   >([]);
+  const [cycleCount, setCycleCount] = useState(0);
   const controllerRef = useRef<BlackboardController | null>(null);
 
-  const fanStore = useFanStore();
-  const audioStore = useAudioStore();
   const sleepStore = useSleepStore();
 
   // Create controller on mount
@@ -51,7 +50,7 @@ export function useBlackboard() {
           { message, category, timestamp: Date.now() },
         ]);
       },
-      onWakeSequence: (_minutes) => {
+      onWakeSequence: () => {
         // Trigger morning mode -- gradual volume decrease, fan increase
         useFanStore.setState({ mode: 'auto' });
       },
@@ -62,6 +61,7 @@ export function useBlackboard() {
     // Subscribe to blackboard changes for UI
     const unsub = blackboard.subscribe(() => {
       setSnapshot(blackboard.getSnapshot());
+      setCycleCount(controller.getCycleCount());
     });
 
     return () => {
@@ -90,6 +90,7 @@ export function useBlackboard() {
 
   const stopAgents = useCallback(() => {
     controllerRef.current?.stop();
+    setCycleCount(0);
   }, []);
 
   const setPreSleepContext = useCallback((ctx: PreSleepContext) => {
@@ -112,6 +113,6 @@ export function useBlackboard() {
     setPreSleepContext,
     setWeatherData,
     setSleepDebt,
-    cycleCount: controllerRef.current?.getCycleCount() ?? 0,
+    cycleCount,
   };
 }

@@ -43,11 +43,18 @@ export default function SpeedKnob({
   const currentRotation = useMotionValue(DETENTS[value].angle);
   const [activeDetent, setActiveDetent] = useState(value);
 
+  // Sync activeDetent from value prop using the "setState during render" pattern
+  // (React recognized pattern for derived state from props)
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setActiveDetent(value);
+  }
+
   // Update rotation when value prop changes externally
   useEffect(() => {
     if (!isDragging.current) {
       currentRotation.set(DETENTS[value].angle);
-      setActiveDetent(value);
     }
   }, [value, currentRotation]);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock,
@@ -102,9 +102,7 @@ function generateMockSessions(): SleepSession[] {
     const dominantPosture = postures[Math.floor(Math.random() * postures.length)];
 
     // Timeline
-    const stageSequence: SleepStage[] = [];
     const numPoints = 24;
-    const stageOptions: SleepStage[] = ['awake', 'light', 'deep', 'rem'];
     const stageValues: Record<SleepStage, number> = { awake: 3, rem: 2, light: 1, deep: 0 };
 
     // Realistic sleep progression
@@ -306,21 +304,19 @@ function ChartTooltip({
 // -- Main Component -------------------------------------------------------------
 
 export default function HistoryPage() {
-  const [sessions, setSessions] = useState<SleepSession[]>([]);
-  const [isDemo, setIsDemo] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // Load real sessions from localStorage, falling back to mock data
-  useEffect(() => {
+  const [sessions] = useState<SleepSession[]>(() => {
+    if (typeof window === 'undefined') return [];
     const stored = getStoredSessions();
-    if (stored.length > 0) {
-      setSessions(mapStoredToDisplay(stored));
-      setIsDemo(false);
-    } else {
-      setSessions(generateMockSessions());
-      setIsDemo(true);
-    }
-  }, []);
+    if (stored.length > 0) return mapStoredToDisplay(stored);
+    return generateMockSessions();
+  });
+
+  const [isDemo] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return getStoredSessions().length === 0;
+  });
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Summary calculations (guarded for empty initial state)
   const avgScore = sessions.length > 0

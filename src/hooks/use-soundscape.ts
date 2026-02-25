@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { SoundscapeEngine } from '@/lib/audio/soundscape-engine';
 import { useAudioStore, type NoiseType } from '@/stores/audio-store';
-import { useSleepStore, type SleepStage } from '@/stores/sleep-store';
+import { useSleepStore } from '@/stores/sleep-store';
 
 export interface UseSoundscapeReturn {
   isPlaying: boolean;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Shield,
@@ -357,7 +357,25 @@ function ConfirmModal({
 // -- Main Component -------------------------------------------------------------
 
 export default function PrivacyPage() {
-  const [regulation, setRegulation] = useState<Regulation>(DEFAULT_REGULATION);
+  const [regulation] = useState<Regulation>(() => {
+    if (typeof window === 'undefined') return DEFAULT_REGULATION;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const reg = TIMEZONE_REGULATIONS[tz];
+      if (reg) return reg;
+      // Check broader region matches
+      if (tz.startsWith('Europe/')) {
+        return TIMEZONE_REGULATIONS['Europe/Paris'];
+      } else if (tz.startsWith('Asia/') && tz.includes('Kolkata') || tz.includes('Calcutta')) {
+        return TIMEZONE_REGULATIONS['Asia/Kolkata'];
+      } else if (tz.startsWith('America/')) {
+        return TIMEZONE_REGULATIONS['America/New_York'];
+      }
+    } catch {
+      // Keep default
+    }
+    return DEFAULT_REGULATION;
+  });
   const [consents, setConsents] = useState<ConsentItem[]>([
     {
       id: 'sensor',
@@ -402,28 +420,6 @@ export default function PrivacyPage() {
   ]);
   const [modal, setModal] = useState<ModalType>(null);
   const [expandedPolicy, setExpandedPolicy] = useState<number | null>(null);
-
-  // Auto-detect regulation based on timezone
-  useEffect(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const reg = TIMEZONE_REGULATIONS[tz];
-      if (reg) {
-        setRegulation(reg);
-      } else {
-        // Check broader region matches
-        if (tz.startsWith('Europe/')) {
-          setRegulation(TIMEZONE_REGULATIONS['Europe/Paris']);
-        } else if (tz.startsWith('Asia/') && tz.includes('Kolkata') || tz.includes('Calcutta')) {
-          setRegulation(TIMEZONE_REGULATIONS['Asia/Kolkata']);
-        } else if (tz.startsWith('America/')) {
-          setRegulation(TIMEZONE_REGULATIONS['America/New_York']);
-        }
-      }
-    } catch {
-      // Keep default
-    }
-  }, []);
 
   const toggleConsent = useCallback((id: string) => {
     setConsents((prev) =>
