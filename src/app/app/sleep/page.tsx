@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Moon, Wind, Volume2, StopCircle, Loader2, Cloud, Thermometer, Zap } from 'lucide-react';
+import { Moon, Wind, Volume2, StopCircle, Loader2, Cloud, Thermometer, Zap, Mic, Battery } from 'lucide-react';
 import PreSleepCheckin, { type PreSleepData } from '@/components/ui/PreSleepCheckin';
 import PermissionGate from '@/components/ui/PermissionGate';
 import { getPermissionManager } from '@/lib/sensors/permission-manager';
 import { useBlackboard } from '@/hooks/use-blackboard';
 import { useWeather } from '@/hooks/use-weather';
+import { useAmbientNoise } from '@/hooks/use-ambient-noise';
 import type { Posture, SleepStage, NoiseType } from '@/types/sleep';
 import { POSTURE_LABELS } from '@/lib/constants/posture';
 import { saveSession, type StoredSession } from '@/lib/storage/session-storage';
@@ -100,6 +101,9 @@ export default function SleepPage() {
   // Weather
   const { weather } = useWeather();
 
+  // Ambient noise
+  const { reading: noiseReading, start: startNoise, stop: stopNoise } = useAmbientNoise();
+
   // -- Pass weather data to blackboard when available ---------------------
   useEffect(() => {
     if (weather) {
@@ -148,20 +152,33 @@ export default function SleepPage() {
     return () => clearInterval(interval);
   }, [phase]);
 
-  // -- Wake Lock ------------------------------------------------------------
+  // -- Wake Lock (robust with auto-reacquire) --------------------------------
+  const phaseRef = useRef(phase);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
   useEffect(() => {
     if (phase !== 'active') return;
 
+    let released = false;
+
     async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) {
+        setWakeLockSupported(false);
+        return;
+      }
+      if (released) return;
       try {
-        if ('wakeLock' in navigator) {
-          wakeLockRef.current = await navigator.wakeLock.request('screen');
-          wakeLockRef.current.addEventListener('release', () => {
-            wakeLockRef.current = null;
-          });
-        } else {
-          setWakeLockSupported(false);
-        }
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        wakeLockRef.current.addEventListener('release', () => {
+          wakeLockRef.current = null;
+          // Auto-reacquire if still in active phase
+          if (phaseRef.current === 'active' && !released) {
+            acquireWakeLock();
+          }
+        });
       } catch {
         setWakeLockSupported(false);
       }
@@ -169,22 +186,34 @@ export default function SleepPage() {
 
     acquireWakeLock();
 
-    // Re-acquire on visibility change
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && phase === 'active') {
+      if (document.visibilityState === 'visible' && phaseRef.current === 'active' && !released) {
         acquireWakeLock();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      released = true;
       document.removeEventListener('visibilitychange', handleVisibility);
-      if (wakeLockRef.current) {
-        wakeLockRef.current.release();
-        wakeLockRef.current = null;
-      }
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
     };
   }, [phase]);
+
+  // -- Screen dimming (tap-to-peek) ------------------------------------------
+  const [dimmed, setDimmed] = useState(true);
+  const peekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handlePeek = useCallback(() => {
+    setDimmed(false);
+    if (peekTimeoutRef.current) clearTimeout(peekTimeoutRef.current);
+    peekTimeoutRef.current = setTimeout(() => setDimmed(true), 5000);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (peekTimeoutRef.current) clearTimeout(peekTimeoutRef.current); };
+  }, []);
 
   // -- Pre-sleep check-in handlers -----------------------------------------
   const handlePreSleepComplete = useCallback(
@@ -227,8 +256,14 @@ export default function SleepPage() {
       setElapsed(0);
       setPhase('active');
       startAgents();
+
+      // Start ambient noise if microphone permission already granted
+      const pm = getPermissionManager();
+      if (pm.getStatus('microphone') === 'granted') {
+        startNoise();
+      }
     }, 4000);
-  }, [startAgents]);
+  }, [startAgents, startNoise]);
 
   // -- Save session to localStorage ------------------------------------------
   const persistSession = useCallback(() => {
@@ -322,6 +357,7 @@ export default function SleepPage() {
       setStopProgress(Math.min(progress, 100));
       if (progress >= 100) {
         if (stopTimerRef.current) clearInterval(stopTimerRef.current);
+        stopNoise();
         persistSession();
         stopAgents();
         setPhase('idle');
@@ -330,7 +366,7 @@ export default function SleepPage() {
         setStopProgress(0);
       }
     }, 100);
-  }, [stopAgents, persistSession]);
+  }, [stopAgents, persistSession, stopNoise]);
 
   const cancelStopHold = useCallback(() => {
     if (stopTimerRef.current) clearInterval(stopTimerRef.current);
@@ -382,6 +418,10 @@ export default function SleepPage() {
           Place your phone on the bed, then tap to begin tracking your sleep posture and
           controlling your fan.
         </p>
+        <div className="flex items-center gap-2 text-xs text-amber-400/70 mb-4 px-2">
+          <Battery className="w-4 h-4 shrink-0" />
+          <span>Plug in your phone. Bedside mode uses ~10-15% battery overnight.</span>
+        </div>
         <motion.button
           onClick={startSession}
           className="relative px-8 py-4 rounded-2xl bg-db-teal text-db-navy font-bold text-lg skeu-raised"
@@ -439,8 +479,9 @@ export default function SleepPage() {
   // -- Active session -- Bedside display -------------------------------------
   return (
     <div
-      className="flex flex-col items-center justify-between min-h-[calc(100vh-6rem)] px-6 py-8"
-      style={{ opacity: 0.85 }}
+      className="flex flex-col items-center justify-between min-h-[calc(100vh-6rem)] px-6 py-8 transition-all duration-1000"
+      style={{ filter: `brightness(${dimmed ? 0.05 : 0.3})` }}
+      onClick={handlePeek}
     >
       {/* Wake lock warning */}
       {!wakeLockSupported && (
@@ -470,6 +511,15 @@ export default function SleepPage() {
             {weather.humidity}%
           </span>
         </motion.div>
+      )}
+
+      {/* Ambient noise indicator -- top-left corner */}
+      {noiseReading && (
+        <div className="absolute top-4 left-4 flex items-center gap-1.5 text-xs opacity-60">
+          <Mic className="w-3 h-3" />
+          <span>{noiseReading.dbLevel} dB</span>
+          <span className="text-[10px]">({noiseReading.classification})</span>
+        </div>
       )}
 
       {/* Session Active breathing pulse */}
@@ -615,9 +665,9 @@ export default function SleepPage() {
         <p className="text-[10px] text-db-text-muted">Long-press 3 seconds to stop</p>
       </div>
 
-      {/* Auto-dim suggestion */}
+      {/* Dimming hint */}
       <p className="text-[9px] text-db-text-muted/40 mt-4 text-center">
-        Tip: Lower your screen brightness for a better sleep environment
+        Tap anywhere to briefly brighten the screen
       </p>
     </div>
   );
