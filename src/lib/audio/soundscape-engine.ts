@@ -17,6 +17,7 @@ import {
   createLowPassFilter,
   type NoiseNode,
 } from './noise-generator';
+import { loadSample, isSampleBased } from './sample-loader';
 
 // -- Types ----------------------------------------------------------------------
 
@@ -110,9 +111,16 @@ export class SoundscapeEngine {
   }
 
   /**
+   * Get the underlying AudioContext (for checking state externally).
+   */
+  get audioContext(): AudioContext | null {
+    return this._ctx;
+  }
+
+  /**
    * Start playback with the given noise type and volume.
    */
-  play(noiseType: NoiseType, volume: number): void {
+  async play(noiseType: NoiseType, volume: number): Promise<void> {
     if (!this._ctx || !this._masterGain) return;
 
     this._baseVolume = Math.max(0, Math.min(1, volume));
@@ -120,14 +128,14 @@ export class SoundscapeEngine {
 
     // Resume context if suspended (browser autoplay policy)
     if (this._ctx.state === 'suspended') {
-      this._ctx.resume();
+      await this._ctx.resume();
     }
 
     // Stop existing layers
     this._stopAllLayers();
 
     // Create primary layer
-    this._addLayer(noiseType, 1.0, null);
+    await this._addLayer(noiseType, 1.0, null);
 
     // Fade in master gain
     this._masterGain.gain.cancelScheduledValues(this._ctx.currentTime);
@@ -201,15 +209,15 @@ export class SoundscapeEngine {
     }
 
     // Schedule new layers to start after the old ones fade
-    this._crossfadeTimer = setTimeout(() => {
+    this._crossfadeTimer = setTimeout(async () => {
       this._stopAllLayers();
 
       // Primary layer
-      this._addLayer(targetMix.primary, targetMix.primaryGain, targetMix.lowPassCutoff);
+      await this._addLayer(targetMix.primary, targetMix.primaryGain, targetMix.lowPassCutoff);
 
       // Secondary layer (e.g. noise masking for REM)
       if (targetMix.secondary) {
-        this._addLayer(targetMix.secondary, targetMix.secondaryGain, null);
+        await this._addLayer(targetMix.secondary, targetMix.secondaryGain, null);
       }
 
       // Fade in new layers
@@ -265,14 +273,14 @@ export class SoundscapeEngine {
 
   // -- Private ---------------------------------------------------------------
 
-  private _addLayer(
+  private async _addLayer(
     noiseType: NoiseType,
     gain: number,
     lowPassCutoff: number | null,
-  ): void {
+  ): Promise<void> {
     if (!this._ctx || !this._masterGain) return;
 
-    const noiseNode = this._createNoiseNode(noiseType);
+    const noiseNode = await this._createNoiseNode(this._ctx, noiseType);
     const gainNode = createGainNode(this._ctx, gain);
 
     let filterNode: BiquadFilterNode | undefined;
@@ -291,27 +299,43 @@ export class SoundscapeEngine {
     this._activeLayers.push({ noiseType, noiseNode, gainNode, filterNode });
   }
 
-  private _createNoiseNode(noiseType: NoiseType): NoiseNode {
-    if (!this._ctx) throw new Error('AudioContext not initialized');
+  private async _createNoiseNode(ctx: AudioContext, noiseType: NoiseType): Promise<NoiseNode> {
+    // Sample-based sounds (rain, ocean, forest)
+    if (isSampleBased(noiseType)) {
+      const buffer = await loadSample(ctx, noiseType);
+      if (buffer) {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.loopStart = 0.5;
+        source.loopEnd = buffer.duration - 0.5;
+        return {
+          node: source,
+          start: () => source.start(0),
+          stop: () => { try { source.stop(); } catch { /* already stopped */ } },
+        };
+      }
+    }
 
+    // Fall through to synthesized sounds (or fallback for failed sample loads)
     switch (noiseType) {
       case 'white':
-        return generateWhiteNoise(this._ctx);
+        return generateWhiteNoise(ctx);
       case 'pink':
-        return generatePinkNoise(this._ctx);
+        return generatePinkNoise(ctx);
       case 'brown':
-        return generateBrownNoise(this._ctx);
+        return generateBrownNoise(ctx);
       case 'rain':
-        // Rain approximated as filtered pink noise with gentle modulation
-        return generatePinkNoise(this._ctx);
+        // Rain fallback: filtered pink noise
+        return generatePinkNoise(ctx);
       case 'ocean':
-        // Ocean approximated as brown noise (low rumble)
-        return generateBrownNoise(this._ctx);
+        // Ocean fallback: brown noise (low rumble)
+        return generateBrownNoise(ctx);
       case 'forest':
-        // Forest approximated as gentle pink noise
-        return generatePinkNoise(this._ctx);
+        // Forest fallback: gentle pink noise
+        return generatePinkNoise(ctx);
       default:
-        return generateWhiteNoise(this._ctx);
+        return generateWhiteNoise(ctx);
     }
   }
 

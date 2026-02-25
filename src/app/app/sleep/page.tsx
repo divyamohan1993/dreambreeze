@@ -9,6 +9,10 @@ import { getPermissionManager } from '@/lib/sensors/permission-manager';
 import { useBlackboard } from '@/hooks/use-blackboard';
 import { useWeather } from '@/hooks/use-weather';
 import { useAmbientNoise } from '@/hooks/use-ambient-noise';
+import { useSoundscape } from '@/hooks/use-soundscape';
+import { useSleepStore } from '@/stores/sleep-store';
+import { useFanStore } from '@/stores/fan-store';
+import { useAudioStore } from '@/stores/audio-store';
 import type { Posture, SleepStage, NoiseType } from '@/types/sleep';
 import { POSTURE_LABELS } from '@/lib/constants/posture';
 import { saveSession, type StoredSession } from '@/lib/storage/session-storage';
@@ -18,10 +22,6 @@ import { saveSession, type StoredSession } from '@/lib/storage/session-storage';
 type SessionPhase = 'pre-sleep' | 'permissions' | 'idle' | 'calibrating' | 'active';
 
 // -- Constants ------------------------------------------------------------------
-
-const POSTURES: Posture[] = ['supine', 'prone', 'left-lateral', 'right-lateral', 'fetal'];
-const STAGES: SleepStage[] = ['awake', 'light', 'deep', 'rem'];
-const NOISE_TYPES: NoiseType[] = ['white', 'pink', 'brown', 'rain', 'ocean', 'forest'];
 
 const NOISE_ICONS: Record<NoiseType, string> = {
   white: 'W',
@@ -71,11 +71,14 @@ export default function SleepPage() {
   const [elapsed, setElapsed] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Simulated live data
-  const [posture, setPosture] = useState<Posture>('supine');
-  const [, setStage] = useState<SleepStage>('awake');
-  const [speedLevel, setSpeedLevel] = useState(2);
-  const [noiseType, setNoiseType] = useState<NoiseType>('rain');
+  // Real-time data from stores (updated by blackboard agent system)
+  const posture = useSleepStore((s) => s.currentPosture);
+  const stage = useSleepStore((s) => s.currentSleepStage);
+  const speedLevel = useFanStore((s) => Math.round(s.speed / 20)); // 0-100 -> 0-5
+  const noiseType = useAudioStore((s) => s.noiseType);
+
+  // Soundscape audio engine
+  const soundscape = useSoundscape();
 
   // Session history tracking (accumulated during active session for storage)
   const postureHistoryRef = useRef<Posture[]>([]);
@@ -132,25 +135,32 @@ export default function SleepPage() {
     return () => clearInterval(interval);
   }, [phase, sessionStart]);
 
-  // -- Simulated data cycling (every 15 seconds) ---------------------------
+  // -- Accumulate real data from stores into session history ------------------
   useEffect(() => {
     if (phase !== 'active') return;
     const interval = setInterval(() => {
-      const newPosture = POSTURES[Math.floor(Math.random() * POSTURES.length)];
-      const newStage = STAGES[Math.floor(Math.random() * STAGES.length)];
-      const newSpeed = Math.floor(Math.random() * 5);
-      setPosture(newPosture);
-      setStage(newStage);
-      setSpeedLevel(newSpeed);
-      setNoiseType(NOISE_TYPES[Math.floor(Math.random() * NOISE_TYPES.length)]);
-
-      // Accumulate for session storage
-      postureHistoryRef.current.push(newPosture);
-      stageHistoryRef.current.push(newStage);
-      fanSpeedHistoryRef.current.push(newSpeed * 20); // 0-4 -> 0-80 scale
+      // Accumulate from real store data for session storage
+      postureHistoryRef.current.push(posture);
+      stageHistoryRef.current.push(stage);
+      fanSpeedHistoryRef.current.push(speedLevel * 20); // 0-5 -> 0-100 scale
     }, 15000);
     return () => clearInterval(interval);
-  }, [phase]);
+  }, [phase, posture, stage, speedLevel]);
+
+  // -- Adaptive volume based on ambient noise ---------------------------------
+  useEffect(() => {
+    if (!noiseReading || phase !== 'active') return;
+    const audioState = useAudioStore.getState();
+    if (!audioState.adaptiveMode || !audioState.isPlaying) return;
+
+    // Target: soundscape 8dB above ambient noise floor
+    const targetDb = noiseReading.noiseFloor + 8;
+    const targetVolume = Math.max(0.1, Math.min(0.8, targetDb / 75));
+
+    if (Math.abs(targetVolume - audioState.volume) > 0.05) {
+      audioState.setVolume(targetVolume);
+    }
+  }, [noiseReading, phase]);
 
   // -- Wake Lock (robust with auto-reacquire) --------------------------------
   const phaseRef = useRef(phase);
@@ -262,8 +272,14 @@ export default function SleepPage() {
       if (pm.getStatus('microphone') === 'granted') {
         startNoise();
       }
+
+      // Start soundscape playback if a noise type is configured
+      const audioState = useAudioStore.getState();
+      if (audioState.noiseType) {
+        void soundscape.play(audioState.noiseType, audioState.volume);
+      }
     }, 4000);
-  }, [startAgents, startNoise]);
+  }, [startAgents, startNoise, soundscape]);
 
   // -- Save session to localStorage ------------------------------------------
   const persistSession = useCallback(() => {
@@ -357,6 +373,7 @@ export default function SleepPage() {
       setStopProgress(Math.min(progress, 100));
       if (progress >= 100) {
         if (stopTimerRef.current) clearInterval(stopTimerRef.current);
+        soundscape.stop();
         stopNoise();
         persistSession();
         stopAgents();
@@ -366,7 +383,7 @@ export default function SleepPage() {
         setStopProgress(0);
       }
     }, 100);
-  }, [stopAgents, persistSession, stopNoise]);
+  }, [stopAgents, persistSession, stopNoise, soundscape]);
 
   const cancelStopHold = useCallback(() => {
     if (stopTimerRef.current) clearInterval(stopTimerRef.current);

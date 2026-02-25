@@ -17,7 +17,7 @@ export interface UseSoundscapeReturn {
   noiseType: NoiseType;
   volume: number;
   adaptiveMode: boolean;
-  play: (type?: NoiseType, vol?: number) => void;
+  play: (type?: NoiseType, vol?: number) => Promise<void>;
   stop: () => void;
   setVolume: (vol: number) => void;
   setNoiseType: (type: NoiseType) => void;
@@ -73,7 +73,7 @@ export function useSoundscape(): UseSoundscapeReturn {
   }, [currentSleepStage, adaptiveMode, isPlaying]);
 
   const play = useCallback(
-    (type?: NoiseType, vol?: number) => {
+    async (type?: NoiseType, vol?: number) => {
       const engine = ensureEngine();
       const playType = type ?? noiseType;
       const playVol = vol ?? volume;
@@ -81,7 +81,12 @@ export function useSoundscape(): UseSoundscapeReturn {
       if (type) storeSetNoiseType(type);
       if (vol !== undefined) storeSetVolume(vol);
 
-      engine.play(playType, playVol);
+      // Ensure AudioContext is resumed before playing (browser autoplay policy)
+      if (engine.audioContext?.state === 'suspended') {
+        await engine.audioContext.resume();
+      }
+
+      await engine.play(playType, playVol);
       storePlay();
     },
     [ensureEngine, noiseType, volume, storePlay, storeSetNoiseType, storeSetVolume],
@@ -104,9 +109,9 @@ export function useSoundscape(): UseSoundscapeReturn {
     (type: NoiseType) => {
       storeSetNoiseType(type);
       if (isPlaying && engineRef.current) {
-        // Restart with new type
+        // Restart with new type (fire-and-forget -- errors handled inside engine)
         const engine = ensureEngine();
-        engine.play(type, volume);
+        void engine.play(type, volume);
       }
     },
     [isPlaying, volume, storeSetNoiseType, ensureEngine],
