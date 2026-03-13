@@ -1,5 +1,6 @@
 {
   "name": "dreambreeze",
+  "packageManager": "pnpm@10.30.1",
   "version": "0.1.0",
   "private": true,
   "scripts": {
