@@ -15,7 +15,7 @@ jobs:
           echo "Wiki initialized. Content coming shortly." >> wiki/Home.md
       
       - name: Push to wiki
-        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        uses: Andrew-Chen-Wang/github-wiki-action@v5
         with:
           path: wiki
           token: ${{ secrets.GITHUB_TOKEN }}
